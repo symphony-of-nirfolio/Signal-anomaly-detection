@@ -1,4 +1,4 @@
-# Signal-anomaly-detection
+# Weather-anomaly-detection
 Internship 2020
 
 ## Trello:
