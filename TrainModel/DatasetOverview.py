@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 
 
 MIN_YEAR = 1899
@@ -117,6 +118,45 @@ def count_min_max_size_for_each_month():
             print(print_type(j) + ': ' + str(min_size) + ', ' + str(min_pos) + '; ' + str(max_size) + ', ' + str(max_pos))
 
 
+def get_vals_from_all_info(file_name):
+    file = open('all_info/' + file_name, "r")
+    line = file.readline()
+    line = file.readline()
+    values_min = line.split(sep=',')
+    line = file.readline()
+    line = file.readline()
+    line = file.readline()
+    values_max = line.split(sep=',')
+    return [float(values_min[0]), float(values_min[1])], [float(values_max[0]), float(values_max[1])]
+
+
+def get_plot():
+    min_temp, max_temp = get_vals_from_all_info('01.txt')
+
+    for year in range(MIN_YEAR, MAX_YEAR, 1):
+        try:
+            data = read_from_file('data/' + str(year) + '_01', 4)
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+            wrong = np.empty(0)
+            for i in range(data.shape[0]):
+                if not min_temp[1] > data[i, 1] > min_temp[0] or not max_temp[1] > data[i, 2] > max_temp[0]:
+                    wrong = np.append(wrong, i)
+            for i in range(wrong.shape[0]):
+                data = np.delete(data, int(wrong[i] - i), axis=0)
+            ax.set_ylim([260, 310])
+            ax.set_facecolor('black')
+            fig.patch.set_facecolor('black')
+            ax.plot(data[:, 0], data[:, 1], c='w', linewidth=5.3)
+            ax.plot(data[:, 0], data[:, 2], c='w', linewidth=5.3)
+            fig.savefig('temp_graphics/01/' + str(year) + '.png', dpi=15)
+            fig.close()
+        except:
+            continue
+
+
+
 # main_get_plots()
 # main_get_min_max_info()
 # count_min_max_size_for_each_month()
+get_plot()
