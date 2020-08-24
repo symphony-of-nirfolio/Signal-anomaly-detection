@@ -24,7 +24,6 @@ def merge_all_years(SIZE, count_column, start_year, end_year, month):
         try:
             file_name = 'data/' + str(i) + '_' + month
             data = read_from_file(file_name, SIZE)
-            # plot_points_for_array(ax, data, count_column)
             all_data = np.append(all_data, data[:, count_column])
         except:
             continue
@@ -75,10 +74,49 @@ def main_get_min_max_info():
             file.write(str(res['caps'][0].get_data()[0][0]))
             file.write(',')
             file.write(str(res['caps'][1].get_data()[0][0]))
+            file.write(',')
             file.write('\n\n')
 
         file.close()
 
 
+def count_min_max_size_for_each_month():
+    for i in range(12):
+        str_month = str(i+1) if i+1 > 9 else '0' + str(i+1)
+        file = open('all_info/' + str_month + '.txt', "r")
+        print(str_month)
+        for j in range(COLUMN_SIZE-1):
+            line = file.readline()
+            if not line.startswith(print_type(j)):
+                line = file.readline()
+            line = file.readline()
+            vals = line.split(sep=',')
+            min_size = 10000
+            min_pos = -1
+            max_pos = -1
+            max_size = 0
+            # print(float(vals[0]))
+            # print(float(vals[1]))
+            for k in range(MIN_YEAR, MAX_YEAR, 1):
+                try:
+                    data = read_from_file('data/' + str(k) + '_' + str_month, COLUMN_SIZE)
+                    # print(data.shape)
+                    cur = data[:, j+1]
+                    # print(str(cur.shape) + ' ' + str(float(vals[0])) + ' ' + str(float(vals[1])))
+                    cur = cur[cur >= float(vals[0])]
+                    cur = cur[cur <= float(vals[1])]
+                    # print(len(cur))
+                    if min_size > len(cur) > 0:
+                        min_size = len(cur)
+                        min_pos = k
+                    if max_size < len(cur):
+                        max_size = len(cur)
+                        max_pos = k
+                except:
+                    continue
+            print(print_type(j) + ': ' + str(min_size) + ', ' + str(min_pos) + '; ' + str(max_size) + ', ' + str(max_pos))
+
+
 # main_get_plots()
-main_get_min_max_info()
+# main_get_min_max_info()
+# count_min_max_size_for_each_month()
