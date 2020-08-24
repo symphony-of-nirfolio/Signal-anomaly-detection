@@ -20,6 +20,9 @@ def main_ui():
     ui.setupUi(main_window)
 
     station_id_line_edit = ui.station_id_line_edit
+    min_max_temperature_check_box = ui.min_max_temperature_check_box
+    precipitation_check_box = ui.precipitation_check_box
+
     get_data_push_button = ui.get_data_push_button
     status_value_label = ui.status_value_label
 
@@ -45,8 +48,17 @@ def main_ui():
         status_value_label.setText(status)
 
     def on_click():
-        textbox_value = station_id_line_edit.text()
-        thread = Worker(handle_data_to_files, textbox_value, event_list, on_error, on_status_changed)
+        station_id = station_id_line_edit.text()
+        need_min_max_temperature = min_max_temperature_check_box.isChecked()
+        need_precipitation = precipitation_check_box.isChecked()
+        thread = Worker(
+            handle_data_to_files,
+            station_id,
+            need_min_max_temperature,
+            need_precipitation,
+            event_list,
+            on_error,
+            on_status_changed)
         thread_pool.start(thread)
 
     get_data_push_button.clicked.connect(on_click)

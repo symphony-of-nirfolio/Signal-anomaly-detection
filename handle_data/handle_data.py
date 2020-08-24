@@ -3,13 +3,28 @@ import datetime
 import numpy as np
 
 
-def handle_data_to_files(station_id, event_list, on_error, on_status_changed):
+def handle_data_to_files(
+        station_id,
+        need_min_max_temperature,
+        need_precipitation,
+        event_list,
+        on_error,
+        on_status_changed):
+
     def add_event(function, *args, **kwargs):
         event_list.append(lambda: function(*args, **kwargs))
 
     site_path = "https://www.ncei.noaa.gov/access/services/data/v1?"
     dataset = "dataset=daily-summaries"
-    data_types = "&dataTypes=TMAX,TMIN,PRCP"
+
+    data_types = "&dataTypes="
+    data_types += "TMAX,TMIN," if need_min_max_temperature else ""
+    data_types += "PRCP," if need_precipitation else ""
+    if need_min_max_temperature or need_precipitation:
+        data_types = data_types[:-1]
+    else:
+        data_types = ""
+
     stations = "&stations=" + str(station_id)
     start_date = "&startDate=1800-01-01"
     end_date = "&endDate=3000-01-01"
@@ -61,17 +76,17 @@ def handle_data_to_files(station_id, event_list, on_error, on_status_changed):
         info.day = day
 
         min_value = 100000
-        if 'TMIN' in current_data:
+        if need_min_max_temperature and 'TMIN' in current_data:
             min_value = float(current_data['TMIN']) + 273.15
             min_temperature = min(min_temperature, min_value)
 
         max_value = 100000
-        if 'TMAX' in current_data:
+        if need_min_max_temperature and 'TMAX' in current_data:
             max_value = float(current_data['TMAX']) + 273.15
             max_temperature = max(max_temperature, max_value)
 
         precipitation = 100000
-        if 'PRCP' in current_data:
+        if need_precipitation and 'PRCP' in current_data:
             precipitation = float(current_data['PRCP'])
             max_precipitation = max(max_precipitation, precipitation)
 
@@ -96,14 +111,28 @@ def handle_data_to_files(station_id, event_list, on_error, on_status_changed):
 
         sorted(current_data, key=lambda current_info: current_info.day)
 
-        out_data = np.zeros((length, 4))
+        size = 1
+        size += 2 if need_min_max_temperature else 0
+        size += 1 if need_precipitation else 0
+
+        out_data = np.zeros((length, size))
 
         for i in range(length):
             info = current_data[i]
-            out_data[i][0] = info.day
-            out_data[i][1] = info.min
-            out_data[i][2] = info.max
-            out_data[i][3] = info.precipitation
+            offset = 0
+            out_data[i][offset] = info.day
+            offset += 1
+
+            if need_min_max_temperature:
+                out_data[i][offset] = info.min
+                offset += 1
+
+                out_data[i][offset] = info.max
+                offset += 1
+
+            if need_precipitation:
+                out_data[i][offset] = info.precipitation
+                offset += 1
 
         out_data.tofile("data/" + key, sep=',')
 
