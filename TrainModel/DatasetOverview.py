@@ -132,7 +132,8 @@ def get_vals_from_all_info(file_name):
 
 def get_plot():
     min_temp, max_temp = get_vals_from_all_info('01.txt')
-
+    counter = 0
+    flag = True
     for year in range(MIN_YEAR, MAX_YEAR, 1):
         try:
             data = read_from_file('data/' + str(year) + '_01', 4)
@@ -149,7 +150,17 @@ def get_plot():
             fig.patch.set_facecolor('black')
             ax.plot(data[:, 0], data[:, 1], c='w', linewidth=5.3)
             ax.plot(data[:, 0], data[:, 2], c='w', linewidth=5.3)
-            fig.savefig('temp_graphics/01/' + str(year) + '.png', dpi=15)
+
+            if counter == 33 or counter == 94:
+                if flag:
+                    counter -= 1
+                    flag = False
+                else:
+                    flag = True
+            else:
+                flag = True
+            fig.savefig('temp_graphics/01/' + str(counter) + '.png', dpi=15)
+            counter += 1
             fig.close()
         except:
             continue
@@ -159,4 +170,4 @@ def get_plot():
 # main_get_plots()
 # main_get_min_max_info()
 # count_min_max_size_for_each_month()
-get_plot()
+# get_plot()
