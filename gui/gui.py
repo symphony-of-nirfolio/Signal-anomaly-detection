@@ -1,9 +1,11 @@
 import sys
+
 import matplotlib
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QThreadPool
-from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
+from gui.main_window import Ui_main_window
 from gui.worker import Worker
 from handle_data.handle_data import handle_data_to_files
 
@@ -11,30 +13,15 @@ matplotlib.use('Qt5Agg')
 
 
 def main_ui():
-    app = QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
+    main_window = QtWidgets.QMainWindow()
 
-    window = QMainWindow()
-    window.setWindowTitle('Weather anomaly detection')
-    window.setGeometry(700, 350, 400, 400)
+    ui = Ui_main_window()
+    ui.setupUi(main_window)
 
-    label = QtWidgets.QLabel(window)
-    label.setText("Enter Station id")
-    label.move(20, 0)
-
-    status_text = "Status: "
-
-    status_label = QtWidgets.QLabel(window)
-    status_label.setText(status_text)
-    status_label.move(20, 120)
-    status_label.resize(280, 20)
-
-    text_box = QLineEdit(window)
-    text_box.setText("USC00080228")
-    text_box.move(20, 30)
-    text_box.resize(280, 20)
-
-    button = QPushButton('Get data', window)
-    button.move(20, 90)
+    station_id_line_edit = ui.station_id_line_edit
+    get_data_push_button = ui.get_data_push_button
+    status_value_label = ui.status_value_label
 
     thread_pool = QThreadPool()
 
@@ -52,18 +39,17 @@ def main_ui():
     event_list_runner.start(10)
 
     def on_error(message):
-        QMessageBox.warning(window, 'Warning', message, QMessageBox.Ok)
+        QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status):
-        status_label.setText(status_text + status)
+        status_value_label.setText(status)
 
     def on_click():
-        textbox_value = text_box.text()
+        textbox_value = station_id_line_edit.text()
         thread = Worker(handle_data_to_files, textbox_value, event_list, on_error, on_status_changed)
         thread_pool.start(thread)
 
-    # noinspection PyUnresolvedReferences
-    button.clicked.connect(on_click)
+    get_data_push_button.clicked.connect(on_click)
 
-    window.show()
+    main_window.show()
     sys.exit(app.exec_())
