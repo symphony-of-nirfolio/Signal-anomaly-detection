@@ -3,13 +3,25 @@ import datetime
 import numpy as np
 
 
+class Info:
+    def __init__(self):
+        self.day = 0
+        self.max = 0
+        self.min = 0
+        self.precipitation = 0
+
+    def __str__(self):
+        return "{}: {}, {}, {}".format(self.day, self.max, self.min, self.precipitation)
+
+
 def handle_data_to_files(
         station_id,
         need_min_max_temperature,
         need_precipitation,
         event_list,
         on_error,
-        on_status_changed):
+        on_status_changed,
+        on_finished):
 
     def add_event(function, *args, **kwargs):
         event_list.append(lambda: function(*args, **kwargs))
@@ -32,7 +44,7 @@ def handle_data_to_files(
     units = "&units=metric"
     output_format = "&format=json"
 
-    url =\
+    url = \
         site_path + dataset + data_types + stations + start_date + end_date + include_attributes + units + output_format
 
     add_event(on_status_changed, "Getting data from site")
@@ -43,16 +55,6 @@ def handle_data_to_files(
     if len(data_json) == 0:
         add_event(on_error, "Entered station doesn't exist!")
         return
-
-    class Info:
-        def __init__(self):
-            self.day = 0
-            self.max = 0
-            self.min = 0
-            self.precipitation = 0
-
-        def __str__(self):
-            return "{}: {}, {}, {}".format(self.day, self.max, self.min, self.precipitation)
 
     data = {}
 
@@ -99,15 +101,11 @@ def handle_data_to_files(
         else:
             data[name] = [info]
 
-    days_count = []
-
     add_event(on_status_changed, "Saving data to files")
 
     for key in data:
         current_data = data[key]
-
         length = len(current_data)
-        days_count.append(length)
 
         sorted(current_data, key=lambda current_info: current_info.day)
 
@@ -143,3 +141,4 @@ def handle_data_to_files(
     print("Finished")
 
     add_event(on_status_changed, "Finished")
+    add_event(on_finished, data)
