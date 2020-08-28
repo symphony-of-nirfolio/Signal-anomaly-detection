@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>982</width>
-    <height>566</height>
+    <width>1753</width>
+    <height>650</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -283,8 +283,8 @@
      <rect>
       <x>350</x>
       <y>0</y>
-      <width>631</width>
-      <height>541</height>
+      <width>1381</width>
+      <height>621</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -325,6 +325,11 @@
      <item>
       <property name="text">
        <string>Year</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>All</string>
       </property>
      </item>
     </widget>
@@ -369,7 +374,7 @@
       <rect>
        <x>490</x>
        <y>10</y>
-       <width>131</width>
+       <width>221</width>
        <height>31</height>
       </rect>
      </property>
@@ -389,8 +394,8 @@
       <rect>
        <x>10</x>
        <y>90</y>
-       <width>611</width>
-       <height>441</height>
+       <width>1361</width>
+       <height>521</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="diagram_vertical_layout"/>

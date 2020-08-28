@@ -6,9 +6,9 @@ import numpy as np
 class Info:
     def __init__(self):
         self.day = 0
-        self.max = 0
-        self.min = 0
-        self.precipitation = 0
+        self.max = 100000.0
+        self.min = 100000.0
+        self.precipitation = 100000.0
 
     def __str__(self):
         return "{}: {}, {}, {}".format(self.day, self.max, self.min, self.precipitation)
@@ -47,7 +47,7 @@ def handle_data_to_files(
     url = \
         site_path + dataset + data_types + stations + start_date + end_date + include_attributes + units + output_format
 
-    add_event(on_status_changed, "Getting data from site")
+    add_event(on_status_changed, "Extracting data from site")
 
     request = requests.get(url)
     data_json = request.json()
