@@ -183,7 +183,7 @@ class Ui_main_window(object):
         self.extract_data_push_button.setText(_translate("main_window", "Extract data"))
         self.data_extraction_status_text_label.setText(_translate("main_window", "Data extraction status:"))
         self.site_text_label.setText(_translate("main_window", "Site:"))
-        self.site_hyperlink_label.setText(_translate("main_window", "<a href=\"https://gis.ncdc.noaa.gov/maps/ncei/summaries/daily\">gis.ncdc.noaa.gov</a>"))
+        self.site_hyperlink_label.setText(_translate("main_window", "<a href=\"https://gis.ncdc.noaa.gov/maps/ncei/cdo/daily\">gis.ncdc.noaa.gov</a>"))
         self.training_status_text_label.setText(_translate("main_window", "Training status:"))
         self.train_push_button.setText(_translate("main_window", "Train"))
         self.select_period_type_combo_box.setItemText(0, _translate("main_window", "(None)"))

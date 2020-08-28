@@ -224,7 +224,7 @@
       </font>
      </property>
      <property name="text">
-      <string>&lt;a href=&quot;https://gis.ncdc.noaa.gov/maps/ncei/summaries/daily&quot;&gt;gis.ncdc.noaa.gov&lt;/a&gt;</string>
+      <string>&lt;a href=&quot;https://gis.ncdc.noaa.gov/maps/ncei/cdo/daily&quot;&gt;gis.ncdc.noaa.gov&lt;/a&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
