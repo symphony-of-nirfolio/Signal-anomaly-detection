@@ -68,7 +68,7 @@
       </font>
      </property>
      <property name="text">
-      <string>USC00080228</string>
+      <string>UPM00033345</string>
      </property>
     </widget>
     <widget class="QGroupBox" name="observations_group_box">
@@ -108,13 +108,29 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>60</y>
+        <y>90</y>
         <width>301</width>
         <height>21</height>
        </rect>
       </property>
       <property name="text">
        <string>Precipitation</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="average_temperature_check_box">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>60</y>
+        <width>301</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Average temperature</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -405,7 +421,7 @@
       <rect>
        <x>150</x>
        <y>50</y>
-       <width>211</width>
+       <width>281</width>
        <height>31</height>
       </rect>
      </property>

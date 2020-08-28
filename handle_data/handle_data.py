@@ -8,6 +8,7 @@ class Info:
         self.day = 0
         self.max = 100000.0
         self.min = 100000.0
+        self.average = 100000.0
         self.precipitation = 100000.0
 
     def __str__(self):
@@ -17,6 +18,7 @@ class Info:
 def handle_data_to_files(
         station_id,
         need_min_max_temperature,
+        need_average_temperature,
         need_precipitation,
         event_list,
         on_error,
@@ -31,8 +33,9 @@ def handle_data_to_files(
 
     data_types = "&dataTypes="
     data_types += "TMAX,TMIN," if need_min_max_temperature else ""
+    data_types += "TAVG," if need_average_temperature else ""
     data_types += "PRCP," if need_precipitation else ""
-    if need_min_max_temperature or need_precipitation:
+    if need_min_max_temperature or need_average_temperature or need_precipitation:
         data_types = data_types[:-1]
     else:
         data_types = ""
@@ -87,6 +90,10 @@ def handle_data_to_files(
             max_value = float(current_data['TMAX']) + 273.15
             max_temperature = max(max_temperature, max_value)
 
+        average_value = 100000
+        if need_average_temperature and 'TAVG' in current_data:
+            average_value = float(current_data['TAVG']) + 273.15
+
         precipitation = 100000
         if need_precipitation and 'PRCP' in current_data:
             precipitation = float(current_data['PRCP'])
@@ -94,6 +101,7 @@ def handle_data_to_files(
 
         info.max = min_value
         info.min = max_value
+        info.average = average_value
         info.precipitation = precipitation
 
         if name in data:
@@ -111,6 +119,7 @@ def handle_data_to_files(
 
         size = 1
         size += 2 if need_min_max_temperature else 0
+        size += 1 if need_average_temperature else 0
         size += 1 if need_precipitation else 0
 
         out_data = np.zeros((length, size))
@@ -126,6 +135,10 @@ def handle_data_to_files(
                 offset += 1
 
                 out_data[i][offset] = info.max
+                offset += 1
+
+            if need_average_temperature:
+                out_data[i][offset] = info.average
                 offset += 1
 
             if need_precipitation:
