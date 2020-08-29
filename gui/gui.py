@@ -4,12 +4,9 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtWidgets import QMessageBox
 
-from gui.gui_diagrams import show_min_max_diagram_by_month, show_precipitation_diagram_by_month, remove_diagrams, \
-    show_min_max_diagram_by_several_months, show_min_max_diagram_by_all_data, \
-    show_precipitation_diagram_by_several_months, \
-    show_precipitation_diagram_by_all_data, show_min_average_max_diagram_by_month, \
-    show_average_diagram_by_month, show_min_average_max_diagram_by_several_months, \
-    show_average_diagram_by_several_months, show_min_average_max_diagram_by_all_data, show_average_diagram_by_all_data
+from gui.gui_available_observaion import reset_observation, set_observation
+from gui.gui_diagrams import show_diagram_by_month, show_diagram_by_several_months, show_diagram_by_several_all_data, \
+    remove_diagrams
 from gui.main_window import Ui_main_window
 from gui.worker import Worker
 from handle_data.handle_data import handle_data_to_files
@@ -23,25 +20,36 @@ def main_ui():
     ui.setupUi(main_window)
 
     station_id_line_edit = ui.station_id_line_edit
-    min_max_temperature_check_box = ui.min_max_temperature_check_box
-    average_temperature_check_box = ui.average_temperature_check_box
-    precipitation_check_box = ui.precipitation_check_box
-
     extract_data_push_button = ui.extract_data_push_button
     data_extraction_status_value_label = ui.data_extraction_status_value_label
+    select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
     diagram_frame = ui.diagram_frame
     select_period_type_combo_box = ui.select_period_type_combo_box
     select_period_combo_box = ui.select_period_combo_box
-    select_observation_combo_box = ui.select_observation_combo_box
+    select_training_observation_vertical_layout = ui.select_training_observation_vertical_layout
 
     diagram_vertical_layout = ui.diagram_vertical_layout
 
     thread_pool = QThreadPool()
     event_list = []
     data = {}
+
+    # Will be used in the future
+    # noinspection PyUnusedLocal
+    min_temperature_training_combo_box = None
+    # noinspection PyUnusedLocal
+    max_temperature_training_combo_box = None
+    # noinspection PyUnusedLocal
+    average_temperature_training_combo_box = None
+
+    min_temperature_diagram_combo_box = None
+    max_temperature_diagram_combo_box = None
+    average_temperature_diagram_combo_box = None
+    contain_min_temperature = False
+    contain_max_temperature = False
+    contain_average_temperature = False
     current_data_list = []
     current_period_type_index = 0
-    current_observation_index = 0
     current_period_index = 0
 
     def run_event():
@@ -62,34 +70,46 @@ def main_ui():
     def on_status_changed(status):
         data_extraction_status_value_label.setText(status)
 
-    def on_finished(extracted_data):
-        nonlocal data
+    def diagram_combo_box_update_diagram():
+        pass
+
+    def on_finished(extracted_data, contain_min, contain_max, contain_average):
+        nonlocal data, contain_min_temperature, contain_max_temperature, contain_average_temperature, \
+            min_temperature_training_combo_box, max_temperature_training_combo_box,\
+            average_temperature_training_combo_box, min_temperature_diagram_combo_box,\
+            max_temperature_diagram_combo_box, average_temperature_diagram_combo_box
         data = extracted_data
+        contain_min_temperature = contain_min
+        contain_max_temperature = contain_max
+        contain_average_temperature = contain_average
+
+        reset_observation(select_training_observation_vertical_layout)
+        min_temperature_training_combo_box, max_temperature_training_combo_box,\
+            average_temperature_training_combo_box =\
+            set_observation(
+                select_training_observation_vertical_layout,
+                lambda state: None,
+                contain_min_temperature,
+                contain_max_temperature,
+                contain_average_temperature)
+
+        reset_observation(select_diagram_observation_vertical_layout)
+        min_temperature_diagram_combo_box, max_temperature_diagram_combo_box,\
+            average_temperature_diagram_combo_box =\
+            set_observation(
+                select_diagram_observation_vertical_layout,
+                lambda state: diagram_combo_box_update_diagram(),
+                contain_min_temperature,
+                contain_max_temperature,
+                contain_average_temperature)
 
         diagram_frame.setEnabled(True)
-        select_observation_combo_box.clear()
-        select_observation_combo_box.addItem("(None)")
-
-        if min_max_temperature_check_box.isChecked() and average_temperature_check_box.isChecked():
-            select_observation_combo_box.addItem("Min / Average / max temperature")
-        if min_max_temperature_check_box.isChecked():
-            select_observation_combo_box.addItem(min_max_temperature_check_box.text())
-        if average_temperature_check_box.isChecked():
-            select_observation_combo_box.addItem(average_temperature_check_box.text())
-        if precipitation_check_box.isChecked():
-            select_observation_combo_box.addItem(precipitation_check_box.text())
 
     def on_click():
         station_id = station_id_line_edit.text()
-        need_min_max_temperature = min_max_temperature_check_box.isChecked()
-        need_average_temperature = average_temperature_check_box.isChecked()
-        need_precipitation = precipitation_check_box.isChecked()
         thread = Worker(
             handle_data_to_files,
             station_id,
-            need_min_max_temperature,
-            need_average_temperature,
-            need_precipitation,
             event_list,
             on_error,
             on_status_changed,
@@ -208,45 +228,41 @@ def main_ui():
     def update_diagram():
         remove_diagrams(diagram_vertical_layout)
 
-        current_data = (main_window, diagram_vertical_layout, {})
+        need_min_temperature = False
+        if min_temperature_diagram_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            need_min_temperature = min_temperature_diagram_combo_box.isChecked()
+
+        need_max_temperature = False
+        if max_temperature_diagram_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            need_max_temperature = max_temperature_diagram_combo_box.isChecked()
+
+        need_average_temperature = False
+        if average_temperature_diagram_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            need_average_temperature = average_temperature_diagram_combo_box.isChecked()
+
+        if not need_min_temperature and not need_max_temperature and not need_average_temperature:
+            return
+
+        current_data = (main_window, diagram_vertical_layout, {}, need_min_temperature, need_max_temperature,
+                        need_average_temperature)
         if current_period_index > 0:
-            current_data = (main_window, diagram_vertical_layout, current_data_list[current_period_index])
+            current_data = (main_window, diagram_vertical_layout, current_data_list[current_period_index],
+                            need_min_temperature, need_max_temperature, need_average_temperature)
 
-        if current_observation_index == 1 and current_period_type_index == 1 and current_period_index > 0:
-            show_min_average_max_diagram_by_month(*current_data)
-        elif current_observation_index == 2 and current_period_type_index == 1 and current_period_index > 0:
-            show_min_max_diagram_by_month(*current_data)
-        elif current_observation_index == 3 and current_period_type_index == 1 and current_period_index > 0:
-            show_average_diagram_by_month(*current_data)
-        elif current_observation_index == 4 and current_period_type_index == 1 and current_period_index > 0:
-            show_precipitation_diagram_by_month(*current_data)
+        if current_period_type_index == 1 and current_period_index > 0:
+            show_diagram_by_month(*current_data)
 
-        elif current_observation_index == 1 and current_period_type_index == 2 and current_period_index > 0:
-            show_min_average_max_diagram_by_several_months(*current_data)
-        elif current_observation_index == 2 and current_period_type_index == 2 and current_period_index > 0:
-            show_min_max_diagram_by_several_months(*current_data)
-        elif current_observation_index == 3 and current_period_type_index == 2 and current_period_index > 0:
-            show_average_diagram_by_several_months(*current_data)
-        elif current_observation_index == 4 and current_period_type_index == 2 and current_period_index > 0:
-            show_precipitation_diagram_by_several_months(*current_data)
+        elif current_period_type_index == 2 and current_period_index > 0:
+            show_diagram_by_several_months(*current_data)
 
-        elif current_observation_index == 1 and current_period_type_index == 3 and current_period_index > 0:
-            show_min_average_max_diagram_by_several_months(*current_data)
-        elif current_observation_index == 2 and current_period_type_index == 3 and current_period_index > 0:
-            show_min_max_diagram_by_several_months(*current_data)
-        elif current_observation_index == 3 and current_period_type_index == 3 and current_period_index > 0:
-            show_average_diagram_by_several_months(*current_data)
-        elif current_observation_index == 4 and current_period_type_index == 3 and current_period_index > 0:
-            show_precipitation_diagram_by_several_months(*current_data)
+        elif current_period_type_index == 3 and current_period_index > 0:
+            show_diagram_by_several_months(*current_data)
 
-        elif current_observation_index == 1 and current_period_type_index == 4 and current_period_index > 0:
-            show_min_average_max_diagram_by_all_data(*current_data)
-        elif current_observation_index == 2 and current_period_type_index == 4 and current_period_index > 0:
-            show_min_max_diagram_by_all_data(*current_data)
-        elif current_observation_index == 3 and current_period_type_index == 4 and current_period_index > 0:
-            show_average_diagram_by_all_data(*current_data)
-        elif current_observation_index == 4 and current_period_type_index == 4 and current_period_index > 0:
-            show_precipitation_diagram_by_all_data(*current_data)
+        elif current_period_type_index == 4 and current_period_index > 0:
+            show_diagram_by_several_all_data(*current_data)
 
     def on_period_type_combo_box_index_changed(index):
         nonlocal current_period_type_index
@@ -269,17 +285,12 @@ def main_ui():
 
         update_diagram()
 
-    def on_observation_combo_box_index_changed(index):
-        nonlocal current_observation_index
-        current_observation_index = index
-
-        update_diagram()
+    diagram_combo_box_update_diagram = update_diagram
 
     extract_data_push_button.clicked.connect(on_click)
 
     select_period_type_combo_box.currentIndexChanged.connect(on_period_type_combo_box_index_changed)
     select_period_combo_box.currentIndexChanged.connect(on_period_combo_box_index_changed)
-    select_observation_combo_box.currentIndexChanged.connect(on_observation_combo_box_index_changed)
 
     main_window.show()
     sys.exit(app.exec_())

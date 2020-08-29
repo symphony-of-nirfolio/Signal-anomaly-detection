@@ -9,17 +9,13 @@ class Info:
         self.max = 100000.0
         self.min = 100000.0
         self.average = 100000.0
-        self.precipitation = 100000.0
 
     def __str__(self):
-        return "{}: {}, {}, {}".format(self.day, self.max, self.min, self.precipitation)
+        return "{}: {}, {}, {}".format(self.day, self.max, self.min, self.average)
 
 
 def handle_data_to_files(
         station_id,
-        need_min_max_temperature,
-        need_average_temperature,
-        need_precipitation,
         event_list,
         on_error,
         on_status_changed,
@@ -30,16 +26,7 @@ def handle_data_to_files(
 
     site_path = "https://www.ncei.noaa.gov/access/services/data/v1?"
     dataset = "dataset=daily-summaries"
-
-    data_types = "&dataTypes="
-    data_types += "TMAX,TMIN," if need_min_max_temperature else ""
-    data_types += "TAVG," if need_average_temperature else ""
-    data_types += "PRCP," if need_precipitation else ""
-    if need_min_max_temperature or need_average_temperature or need_precipitation:
-        data_types = data_types[:-1]
-    else:
-        data_types = ""
-
+    data_types = "&dataTypes=TMAX,TMIN,TAVG"
     stations = "&stations=" + str(station_id)
     start_date = "&startDate=1800-01-01"
     end_date = "&endDate=3000-01-01"
@@ -63,7 +50,10 @@ def handle_data_to_files(
 
     min_temperature = 10000
     max_temperature = 0
-    max_precipitation = 0
+
+    contain_min_temperature = False
+    contain_max_temperature = False
+    contain_average_temperature = False
 
     add_event(on_status_changed, "Parsing data")
 
@@ -81,28 +71,25 @@ def handle_data_to_files(
         info.day = day
 
         min_value = 100000
-        if need_min_max_temperature and 'TMIN' in current_data:
+        if 'TMIN' in current_data:
             min_value = float(current_data['TMIN']) + 273.15
             min_temperature = min(min_temperature, min_value)
+            contain_min_temperature = True
 
         max_value = 100000
-        if need_min_max_temperature and 'TMAX' in current_data:
+        if 'TMAX' in current_data:
             max_value = float(current_data['TMAX']) + 273.15
             max_temperature = max(max_temperature, max_value)
+            contain_max_temperature = True
 
         average_value = 100000
-        if need_average_temperature and 'TAVG' in current_data:
+        if 'TAVG' in current_data:
             average_value = float(current_data['TAVG']) + 273.15
-
-        precipitation = 100000
-        if need_precipitation and 'PRCP' in current_data:
-            precipitation = float(current_data['PRCP'])
-            max_precipitation = max(max_precipitation, precipitation)
+            contain_average_temperature = True
 
         info.max = min_value
         info.min = max_value
         info.average = average_value
-        info.precipitation = precipitation
 
         if name in data:
             data[name].append(info)
@@ -117,41 +104,28 @@ def handle_data_to_files(
 
         sorted(current_data, key=lambda current_info: current_info.day)
 
-        size = 1
-        size += 2 if need_min_max_temperature else 0
-        size += 1 if need_average_temperature else 0
-        size += 1 if need_precipitation else 0
-
+        size = 4
         out_data = np.zeros((length, size))
 
         for i in range(length):
             info = current_data[i]
-            offset = 0
-            out_data[i][offset] = info.day
-            offset += 1
 
-            if need_min_max_temperature:
-                out_data[i][offset] = info.min
-                offset += 1
-
-                out_data[i][offset] = info.max
-                offset += 1
-
-            if need_average_temperature:
-                out_data[i][offset] = info.average
-                offset += 1
-
-            if need_precipitation:
-                out_data[i][offset] = info.precipitation
-                offset += 1
+            out_data[i][0] = info.day
+            out_data[i][1] = info.min
+            out_data[i][2] = info.max
+            out_data[i][3] = info.average
 
         out_data.tofile("data/" + key, sep=',')
 
-    print(min_temperature)
-    print(max_temperature)
-    print(max_precipitation)
+    print("Min of min temperatures: {}".format(min_temperature))
+    print("Max of max temperatures: {}".format(max_temperature))
+
+    print("Contain min: {}, Contain max: {}, Contain average: {}".format(
+        contain_min_temperature,
+        contain_max_temperature,
+        contain_average_temperature))
 
     print("Finished")
 
     add_event(on_status_changed, "Finished")
-    add_event(on_finished, data)
+    add_event(on_finished, data, contain_min_temperature, contain_max_temperature, contain_average_temperature)

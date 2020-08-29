@@ -36,10 +36,6 @@ def get_average_from_info(info):
     return info.average
 
 
-def get_precipitation_form_info(info):
-    return info.precipitation
-
-
 def get_data_points(data, offset, get_data_from_info, data_offset=0.0):
     days = []
     observations = []
@@ -63,10 +59,6 @@ def get_max_points(data, offset):
 
 def get_average_points(data, offset):
     return get_data_points(data, offset, get_average_from_info, data_offset=-273.15)
-
-
-def get_precipitation_points(data, offset):
-    return get_data_points(data, offset, get_precipitation_form_info)
 
 
 def get_points_by_month(data, get_points):
@@ -117,100 +109,67 @@ def get_points_by_all_data(data, get_points):
     return days_all, observations_all
 
 
-def show_diagram_by_month(main_window, vertical_layout, data, get_points,
-                          need_min_max_temperature=False,
-                          need_average_temperature=False,
-                          need_precipitation=False):
+def show_diagram_by_points_function(main_window, vertical_layout, data, get_points,
+                                    need_min_temperature=False,
+                                    need_max_temperature=False,
+                                    need_average_temperature=False):
     figure_canvas = create_diagram_canvas(main_window, vertical_layout)
 
     size = 0
     days = []
     observations = []
-    colors = ['r', 'y', 'm', 'g']
+    colors = []
 
-    if need_min_max_temperature:
+    if need_min_temperature:
         days_form_min, min_temperature = get_points(data, get_min_points)
-        days_form_max, max_temperature = get_points(data, get_max_points)
         days.append(days_form_min)
-        days.append(days_form_max)
         observations.append(min_temperature)
+        colors.append('r')
+        size += 1
+
+    if need_max_temperature:
+        days_form_max, max_temperature = get_points(data, get_max_points)
+        days.append(days_form_max)
         observations.append(max_temperature)
-        size += 2
+        colors.append('y')
+        size += 1
 
     if need_average_temperature:
         days_form_average, average_temperature = get_points(data, get_average_points)
         days.append(days_form_average)
         observations.append(average_temperature)
-        size += 1
-
-    if need_precipitation:
-        days_from_precipitation, precipitation = get_points(data, get_precipitation_points)
-        days.append(days_from_precipitation)
-        observations.append(precipitation)
+        colors.append('m')
         size += 1
 
     for i in range(size):
         figure_canvas.axes.plot(days[i], observations[i], colors[i])
 
 
-def show_min_average_max_diagram_by_month(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_month,
-                          need_min_max_temperature=True,
-                          need_average_temperature=True)
+def show_diagram_by_month(main_window, vertical_layout, data,
+                          need_min_temperature=False,
+                          need_max_temperature=False,
+                          need_average_temperature=False):
+    show_diagram_by_points_function(main_window, vertical_layout, data, get_points_by_month,
+                                    need_min_temperature=need_min_temperature,
+                                    need_max_temperature=need_max_temperature,
+                                    need_average_temperature=need_average_temperature)
 
 
-def show_min_max_diagram_by_month(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_month,
-                          need_min_max_temperature=True)
+def show_diagram_by_several_months(main_window, vertical_layout, data,
+                                   need_min_temperature=False,
+                                   need_max_temperature=False,
+                                   need_average_temperature=False):
+    show_diagram_by_points_function(main_window, vertical_layout, data, get_points_by_several_months,
+                                    need_min_temperature=need_min_temperature,
+                                    need_max_temperature=need_max_temperature,
+                                    need_average_temperature=need_average_temperature)
 
 
-def show_average_diagram_by_month(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_month,
-                          need_average_temperature=True)
-
-
-def show_precipitation_diagram_by_month(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_month,
-                          need_precipitation=True)
-
-
-def show_min_average_max_diagram_by_several_months(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_several_months,
-                          need_min_max_temperature=True,
-                          need_average_temperature=True)
-
-
-def show_min_max_diagram_by_several_months(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_several_months,
-                          need_min_max_temperature=True)
-
-
-def show_average_diagram_by_several_months(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_several_months,
-                          need_average_temperature=True)
-
-
-def show_precipitation_diagram_by_several_months(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_several_months,
-                          need_precipitation=True)
-
-
-def show_min_average_max_diagram_by_all_data(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_all_data,
-                          need_min_max_temperature=True,
-                          need_average_temperature=True)
-
-
-def show_min_max_diagram_by_all_data(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_all_data,
-                          need_min_max_temperature=True)
-
-
-def show_average_diagram_by_all_data(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_all_data,
-                          need_average_temperature=True)
-
-
-def show_precipitation_diagram_by_all_data(main_window, vertical_layout, data):
-    show_diagram_by_month(main_window, vertical_layout, data, get_points_by_all_data,
-                          need_precipitation=True)
+def show_diagram_by_several_all_data(main_window, vertical_layout, data,
+                                     need_min_temperature=False,
+                                     need_max_temperature=False,
+                                     need_average_temperature=False):
+    show_diagram_by_points_function(main_window, vertical_layout, data, get_points_by_all_data,
+                                    need_min_temperature=need_min_temperature,
+                                    need_max_temperature=need_max_temperature,
+                                    need_average_temperature=need_average_temperature)
