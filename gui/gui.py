@@ -127,7 +127,7 @@ def main_ui():
         diagram_frame.setEnabled(False)
         reset_observation(select_training_observation_vertical_layout)
         reset_observation(select_diagram_observation_vertical_layout)
-        
+
         station_id = station_id_line_edit.text()
         thread = Worker(
             handle_data_to_files,

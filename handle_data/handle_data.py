@@ -89,8 +89,8 @@ def handle_data_to_files(
             average_value = float(current_data['TAVG']) + 273.15
             contain_average_temperature = True
 
-        info.max = min_value
-        info.min = max_value
+        info.min = min_value
+        info.max = max_value
         info.average = average_value
 
         if name in data:

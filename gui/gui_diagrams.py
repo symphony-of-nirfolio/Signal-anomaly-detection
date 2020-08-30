@@ -2,6 +2,7 @@ import matplotlib
 from datetime import date
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
+from handle_data.info import Info
 
 matplotlib.use('Qt5Agg')
 
@@ -24,15 +25,15 @@ def create_diagram_canvas(main_window, vertical_layout):
     return figure_canvas
 
 
-def get_min_form_info(info):
+def get_min_form_info(info: Info):
     return info.min
 
 
-def get_max_form_info(info):
+def get_max_form_info(info: Info):
     return info.max
 
 
-def get_average_from_info(info):
+def get_average_from_info(info: Info):
     return info.average
 
 
@@ -121,19 +122,11 @@ def show_diagram_by_points_function(main_window, vertical_layout, data, get_poin
     colors = []
     labels = []
 
-    if need_min_temperature:
-        days_form_min, min_temperature = get_points(data, get_min_points)
-        days.append(days_form_min)
-        observations.append(min_temperature)
-        colors.append('r')
-        labels.append("Min")
-        size += 1
-
     if need_max_temperature:
         days_form_max, max_temperature = get_points(data, get_max_points)
         days.append(days_form_max)
         observations.append(max_temperature)
-        colors.append('y')
+        colors.append('r')
         labels.append("Max")
         size += 1
 
@@ -145,9 +138,17 @@ def show_diagram_by_points_function(main_window, vertical_layout, data, get_poin
         labels.append("Average")
         size += 1
 
+    if need_min_temperature:
+        days_form_min, min_temperature = get_points(data, get_min_points)
+        days.append(days_form_min)
+        observations.append(min_temperature)
+        colors.append('y')
+        labels.append("Min")
+        size += 1
+
     for i in range(size):
         figure_canvas.axes.plot(days[i], observations[i], colors[i])
-    # figure_canvas.axes.legend(labels)
+    figure_canvas.axes.legend(labels)
 
 
 def show_diagram_by_month(main_window, vertical_layout, data,
