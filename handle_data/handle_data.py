@@ -39,8 +39,13 @@ def handle_data_to_files(
 
     add_event(on_status_changed, "Extracting data from site")
 
-    request = requests.get(url)
-    data_json = request.json()
+    # TODO: make it's better
+    try:
+        request = requests.get(url)
+        data_json = request.json()
+    except requests.exceptions.RequestException as e:
+        add_event(on_error, str(e))
+        return
 
     if len(data_json) == 0:
         add_event(on_error, "Entered station doesn't exist!")
