@@ -1,13 +1,14 @@
-from keras.layers import Input, Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D, Flatten
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D
 from keras.models import Model, Sequential
-from keras.optimizers import RMSprop
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from CustomGenerator import SequenceGenerator
 import time
 
 import random
 import numpy as np
-import os
 import shutil
 from matplotlib import pyplot as plt
 from multiprocessing import Process
@@ -120,27 +121,36 @@ def _get_samples(dataset_len):
 
 
 def _train_model_for_season(path_to_save, station_id, season, column):
-    data_for_learn = np.fromfile(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(column) + '.dat', sep=',')
+    data_for_learn = np.fromfile(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(column) + '.dat',
+                                 sep=',')
 
     model = _get_model()
     train_samples, valid_samples = _get_samples(len(data_for_learn))
     train_generator = SequenceGenerator(train_samples, BATCH_SIZE, data_for_learn)
     valid_generator = SequenceGenerator(valid_samples, BATCH_SIZE, data_for_learn)
-    print(len(data_for_learn))
+    # print(len(data_for_learn))
     early_stopper = EarlyStopping(patience=5, verbose=0)
     nn_save_path = path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[column] + '/' + str(season) + '.h5'
     check_pointer = ModelCheckpoint(nn_save_path, verbose=0, save_best_only=True)
 
-    model.fit_generator(generator=train_generator,
-                        steps_per_epoch=len(train_generator),
-                        epochs=EPOCHS,
-                        verbose=0,
-                        validation_data=valid_generator,
-                        validation_steps=len(valid_generator),
-                        callbacks=[check_pointer, early_stopper])
+    model.fit(x=train_generator,
+              steps_per_epoch=len(train_generator),
+              epochs=EPOCHS,
+              verbose=0,
+              validation_data=valid_generator,
+              validation_steps=len(valid_generator),
+              callbacks=[check_pointer, early_stopper])
+
+
+def _delete_temp_data(path_to_save, station_id, columns):
+    for season in range(_SEASON_NUMBER):
+        for i in range(len(columns)):
+            if columns[i]:
+                os.remove(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(i) + '.dat')
 
 
 def train(station_id, path_to_data, columns, path_to_save):
+
     _prepare_all_data(station_id, path_to_data, columns, path_to_save)
 
     processes = []
@@ -149,21 +159,24 @@ def train(station_id, path_to_data, columns, path_to_save):
             if columns[i]:
                 processes.append(Process(target=_train_model_for_season,
                                          args=(path_to_save, station_id, season, i)))
-
-        if len(processes) > 3:
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-            processes = []
+                if len(processes) > 3:
+                    for p in processes:
+                        p.start()
+                    for p in processes:
+                        p.join()
+                    processes = []
 
     for p in processes:
         p.start()
     for p in processes:
         p.join()
 
+    _delete_temp_data(path_to_save, station_id, columns)
 
+
+'''
 time1 = time.time()
-train('ui123', 'data', (0, 1, 0), 'nn')
+train('ui123', 'data', (1, 1, 1), 'nn')
 time2 = time.time()
 print('{:s} function took {:.3f} ms'.format(train.__name__, (time2 - time1) * 1000.0))
+'''
