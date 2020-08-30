@@ -26,7 +26,7 @@ def main_ui():
     load_from_files_push_button = ui.load_from_files_push_button
     data_extraction_status_value_label = ui.data_extraction_status_value_label
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
-    diagram_frame = ui.diagram_frame
+    diagram_parameters_frame = ui.diagram_parameters_frame
     select_period_type_combo_box = ui.select_period_type_combo_box
     select_period_combo_box = ui.select_period_combo_box
     select_training_observation_vertical_layout = ui.select_training_observation_vertical_layout
@@ -121,10 +121,10 @@ def main_ui():
                 contain_max_temperature,
                 contain_average_temperature)
 
-        diagram_frame.setEnabled(True)
+        diagram_parameters_frame.setEnabled(True)
 
     def on_extract_data_push_button_click():
-        diagram_frame.setEnabled(False)
+        diagram_parameters_frame.setEnabled(False)
         reset_observation(select_training_observation_vertical_layout)
         reset_observation(select_diagram_observation_vertical_layout)
 
