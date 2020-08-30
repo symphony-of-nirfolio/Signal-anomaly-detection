@@ -9,6 +9,8 @@ from gui.gui_diagrams import show_diagram_by_month, show_diagram_by_several_mont
     remove_diagrams
 from gui.main_window import Ui_main_window
 from gui.worker import Worker
+from handle_data.data_management import get_stations_info_from_json, init_files_and_directories_if_not_exist, \
+    get_stations_data_from_file
 from handle_data.handle_data import handle_data_to_files
 
 
@@ -21,6 +23,7 @@ def main_ui():
 
     station_id_line_edit = ui.station_id_line_edit
     extract_data_push_button = ui.extract_data_push_button
+    load_from_files_push_button = ui.load_from_files_push_button
     data_extraction_status_value_label = ui.data_extraction_status_value_label
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
     diagram_frame = ui.diagram_frame
@@ -29,6 +32,9 @@ def main_ui():
     select_training_observation_vertical_layout = ui.select_training_observation_vertical_layout
 
     diagram_vertical_layout = ui.diagram_vertical_layout
+
+    init_files_and_directories_if_not_exist()
+    stations_info = get_stations_info_from_json()
 
     thread_pool = QThreadPool()
     event_list = []
@@ -63,6 +69,18 @@ def main_ui():
     # noinspection PyUnresolvedReferences
     event_list_runner.timeout.connect(run_event)
     event_list_runner.start(10)
+
+    def is_current_station_id_in_stations_info():
+        station_id = station_id_line_edit.text()
+        return station_id in stations_info
+
+    def update_station_id_push_buttons():
+        if is_current_station_id_in_stations_info():
+            extract_data_push_button.setText("Update to latest")
+            load_from_files_push_button.setEnabled(True)
+        else:
+            extract_data_push_button.setText("Extract data")
+            load_from_files_push_button.setEnabled(False)
 
     def on_error(message):
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
@@ -105,16 +123,30 @@ def main_ui():
 
         diagram_frame.setEnabled(True)
 
-    def on_click():
+    def on_extract_data_push_button_click():
+        diagram_frame.setEnabled(False)
+        reset_observation(select_training_observation_vertical_layout)
+        reset_observation(select_diagram_observation_vertical_layout)
+        
         station_id = station_id_line_edit.text()
         thread = Worker(
             handle_data_to_files,
+            stations_info,
             station_id,
             event_list,
             on_error,
             on_status_changed,
             on_finished)
         thread_pool.start(thread)
+
+    def on_load_data_from_files_push_button_click():
+        station_id = station_id_line_edit.text()
+        loaded_data = get_stations_data_from_file(station_id)
+        on_finished(
+            loaded_data,
+            stations_info[station_id]['need_min'],
+            stations_info[station_id]['need_max'],
+            stations_info[station_id]['need_average'])
 
     def reset_period_combo_box():
         select_period_combo_box.clear()
@@ -287,10 +319,15 @@ def main_ui():
 
     diagram_combo_box_update_diagram = update_diagram
 
-    extract_data_push_button.clicked.connect(on_click)
+    extract_data_push_button.clicked.connect(on_extract_data_push_button_click)
+    load_from_files_push_button.clicked.connect(on_load_data_from_files_push_button_click)
 
     select_period_type_combo_box.currentIndexChanged.connect(on_period_type_combo_box_index_changed)
     select_period_combo_box.currentIndexChanged.connect(on_period_combo_box_index_changed)
+
+    station_id_line_edit.textChanged.connect(lambda text: update_station_id_push_buttons())
+
+    update_station_id_push_buttons()
 
     main_window.show()
     sys.exit(app.exec_())

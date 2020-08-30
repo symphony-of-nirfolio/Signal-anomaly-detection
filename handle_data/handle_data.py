@@ -2,19 +2,12 @@ import requests
 import datetime
 import numpy as np
 
-
-class Info:
-    def __init__(self):
-        self.day = 0
-        self.max = 100000.0
-        self.min = 100000.0
-        self.average = 100000.0
-
-    def __str__(self):
-        return "{}: {}, {}, {}".format(self.day, self.max, self.min, self.average)
+from handle_data.data_management import create_directory_for_station, write_stations_info_to_json
+from handle_data.info import Info
 
 
 def handle_data_to_files(
+        stations_info,
         station_id,
         event_list,
         on_error,
@@ -49,6 +42,10 @@ def handle_data_to_files(
 
     if len(data_json) == 0:
         add_event(on_error, "Entered station doesn't exist!")
+        return
+
+    if request.status_code != 200:
+        add_event(on_error, "Bad status code: {}!".format(request.status_code))
         return
 
     data = {}
@@ -103,6 +100,21 @@ def handle_data_to_files(
 
     add_event(on_status_changed, "Saving data to files")
 
+    path = create_directory_for_station(station_id)
+
+    is_trained = False
+    if station_id in stations_info:
+        is_trained = stations_info[station_id]["is_trained"]
+
+    stations_info[station_id] =\
+        {
+            "need_min": contain_min_temperature,
+            "need_max": contain_max_temperature,
+            "need_average": contain_average_temperature,
+            "is_trained": is_trained
+        }
+    write_stations_info_to_json(stations_info)
+
     for key in data:
         current_data = data[key]
         length = len(current_data)
@@ -120,7 +132,7 @@ def handle_data_to_files(
             out_data[i][2] = info.max
             out_data[i][3] = info.average
 
-        out_data.tofile("data/" + key, sep=',')
+        out_data.tofile(path + "/" + key, sep=',')
 
     print("Min of min temperatures: {}".format(min_temperature))
     print("Max of max temperatures: {}".format(max_temperature))

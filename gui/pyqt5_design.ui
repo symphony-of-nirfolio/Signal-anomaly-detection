@@ -266,6 +266,24 @@
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
+    <widget class="QPushButton" name="load_from_files_push_button">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>140</y>
+       <width>131</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Load from files</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="diagram_frame">
     <property name="enabled">
