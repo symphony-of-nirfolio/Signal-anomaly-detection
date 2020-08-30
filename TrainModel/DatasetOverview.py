@@ -148,8 +148,8 @@ def get_plot():
             ax.set_ylim([260, 310])
             ax.set_facecolor('black')
             fig.patch.set_facecolor('black')
-            ax.plot(data[:, 0], data[:, 1], c='w', linewidth=5.3)
-            ax.plot(data[:, 0], data[:, 2], c='w', linewidth=5.3)
+            ax.plot(data[:, 0], data[:, 1], c='w', linewidth=20)
+            # ax.plot(data[:, 0], data[:, 2], c='w', linewidth=5.3)
 
             if counter == 33 or counter == 94:
                 if flag:
@@ -166,8 +166,49 @@ def get_plot():
             continue
 
 
+def get_values_from_range(data, min_val, max_val):
+    # data = data[:, 1]
+    data = data[data >= min_val]
+    data = data[data <= max_val]
+    # data = data[data < 1000]
+    return data
+
+
+def create_dataset_for_winter():
+    min_temp_dec, max_temp_dec = get_vals_from_all_info('12.txt')
+    min_temp_jan, max_temp_jan = get_vals_from_all_info('01.txt')
+    min_temp_feb, max_temp_feb = get_vals_from_all_info('02.txt')
+    min_temp = min(min(min_temp_dec[0], min_temp_jan[0]), min_temp_feb[0])
+    max_temp = max(max(min_temp_dec[1], min_temp_jan[1]), min_temp_feb[1])
+    all_winter = np.empty(0)
+
+    month_names = ['_01', '_02', '_12']
+    print(month_names)
+    print(min_temp)
+    print(max_temp)
+    for year in range(MIN_YEAR+1, MAX_YEAR+1, 1):
+        for month in month_names:
+            try:
+                data = read_from_file('data/' + str(year) + month, COLUMN_SIZE)
+                all_winter = np.append(all_winter, data[:, 1])
+            except:
+                continue
+    all_winter = get_values_from_range(all_winter, min_temp, max_temp)
+    mean = np.mean(all_winter)
+    variance = np.var(all_winter)
+    all_winter = np.array([(item - 265)/(320-265) - 0.5 for item in all_winter])
+    all_winter.tofile('data_/winter_min.txt', sep=',')
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(all_winter, c='r')
+    plt.show()
+    print(all_winter.shape)
+
+
 
 # main_get_plots()
 # main_get_min_max_info()
 # count_min_max_size_for_each_month()
 # get_plot()
+create_dataset_for_winter()
