@@ -338,6 +338,9 @@
        <layout class="QVBoxLayout" name="diagram_and_parameters_vertical_layout">
         <item>
          <widget class="QFrame" name="diagram_parameters_frame">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="minimumSize">
            <size>
             <width>720</width>

@@ -137,6 +137,7 @@ class Ui_main_window(object):
         self.diagram_and_parameters_vertical_layout = QtWidgets.QVBoxLayout()
         self.diagram_and_parameters_vertical_layout.setObjectName("diagram_and_parameters_vertical_layout")
         self.diagram_parameters_frame = QtWidgets.QFrame(self.centralwidget)
+        self.diagram_parameters_frame.setEnabled(False)
         self.diagram_parameters_frame.setMinimumSize(QtCore.QSize(720, 150))
         self.diagram_parameters_frame.setMaximumSize(QtCore.QSize(16777215, 150))
         self.diagram_parameters_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)

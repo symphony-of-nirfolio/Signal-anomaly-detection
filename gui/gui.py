@@ -24,6 +24,7 @@ def main_ui():
     station_id_line_edit = ui.station_id_line_edit
     extract_data_push_button = ui.extract_data_push_button
     load_from_files_push_button = ui.load_from_files_push_button
+    train_push_button = ui.train_push_button
     data_extraction_status_value_label = ui.data_extraction_status_value_label
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
     diagram_parameters_frame = ui.diagram_parameters_frame
@@ -123,6 +124,15 @@ def main_ui():
 
         diagram_parameters_frame.setEnabled(True)
 
+    def on_error_to_event_list(message):
+        event_list.append(lambda: on_error(message))
+
+    def on_status_changed_to_event_list(status):
+        event_list.append(lambda: on_status_changed(status))
+
+    def on_finished_to_event_list(extracted_data, contain_min, contain_max, contain_average):
+        event_list.append(lambda: on_finished(extracted_data, contain_min, contain_max, contain_average))
+
     def on_extract_data_push_button_click():
         diagram_parameters_frame.setEnabled(False)
         reset_observation(select_training_observation_vertical_layout)
@@ -133,10 +143,9 @@ def main_ui():
             handle_data_to_files,
             stations_info,
             station_id,
-            event_list,
-            on_error,
-            on_status_changed,
-            on_finished)
+            on_error_to_event_list,
+            on_status_changed_to_event_list,
+            on_finished_to_event_list)
         thread_pool.start(thread)
 
     def on_load_data_from_files_push_button_click():
