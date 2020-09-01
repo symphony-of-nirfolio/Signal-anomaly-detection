@@ -21,11 +21,12 @@ _MIN_YEAR = 1800
 _MAX_YEAR = 2020
 _MIN_TEMPERATURE = 265
 _MAX_TEMPERATURE = 320
+_SCALE_DATA = 8
 
-BATCH_SIZE = 8
-IN_X = 28
-IN_Y = 1
-EPOCHS = 200
+_BATCH_SIZE = 8
+_IN_X = 28
+_IN_Y = 1
+_EPOCHS = 200
 
 
 def _create_directory_for_nn(station_id, columns, path_to_save):
@@ -98,13 +99,18 @@ def _prepare_all_data(station_id, path_to_data, columns, path_to_save):
                 _save_temp_data(path_to_save, station_id, season, i, data)
 
 
-def _get_model():
+def _create_model():
     model = Sequential()
-    model.add(Conv1D(filters=4, kernel_size=5, padding='same', activation='tanh', input_shape=(IN_X, IN_Y)))
+    model.add(Conv1D(filters=4, kernel_size=5, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
     model.add(MaxPooling1D(4))
     model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh'))
     model.add(GlobalMaxPool1D())
-    model.add(Dense(units=IN_X, activation='tanh'))
+    model.add(Dense(units=_IN_X, activation='tanh'))
+    return model
+
+
+def _get_model():
+    model = _create_model()
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
 
@@ -126,8 +132,8 @@ def _train_model_for_season(path_to_save, station_id, season, column):
 
     model = _get_model()
     train_samples, valid_samples = _get_samples(len(data_for_learn))
-    train_generator = SequenceGenerator(train_samples, BATCH_SIZE, data_for_learn)
-    valid_generator = SequenceGenerator(valid_samples, BATCH_SIZE, data_for_learn)
+    train_generator = SequenceGenerator(train_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA)
+    valid_generator = SequenceGenerator(valid_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA)
     # print(len(data_for_learn))
     early_stopper = EarlyStopping(patience=5, verbose=0)
     nn_save_path = path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[column] + '/' + str(season) + '.h5'
@@ -135,7 +141,7 @@ def _train_model_for_season(path_to_save, station_id, season, column):
 
     model.fit(x=train_generator,
               steps_per_epoch=len(train_generator),
-              epochs=EPOCHS,
+              epochs=_EPOCHS,
               verbose=0,
               validation_data=valid_generator,
               validation_steps=len(valid_generator),
