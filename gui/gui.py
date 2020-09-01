@@ -10,7 +10,7 @@ from gui.main_window import Ui_main_window
 from handle_data.data_management import get_stations_info_from_json, init_files_and_directories_if_not_exist
 
 
-def main_ui():
+def main_ui() -> None:
     app = QtWidgets.QApplication(sys.argv)
     main_window = QtWidgets.QMainWindow()
 
@@ -23,7 +23,7 @@ def main_ui():
     thread_pool = QThreadPool()
     event_list = []
 
-    def run_event():
+    def run_event() -> None:
         if len(event_list) > 0:
             function = event_list[0]
             function()
@@ -42,7 +42,7 @@ def main_ui():
     busy_listeners = []
     on_extract_finished = []
 
-    def set_busy_by(station_id: str, is_data_extract=False, is_train=False, is_diagram=False):
+    def set_busy_by(station_id: str, is_data_extract=False, is_train=False, is_diagram=False) -> None:
         nonlocal busy_by_data_extract, busy_by_train, busy_by_diagram
 
         if is_data_extract:

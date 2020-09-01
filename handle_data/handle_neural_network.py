@@ -1,12 +1,19 @@
 import _thread
 import time
+from typing import Callable
 
 from Backend.TrainModel import train
 from handle_data.data_management import create_directory_for_station, create_directory_for_trained_model
 
 
 # noinspection PyUnusedLocal
-def train_model(station_id, on_error, on_status_changed, on_finished, need_min, need_max, need_average):
+def train_model(station_id: str,
+                on_error: Callable[[str], None],
+                on_status_changed: Callable[[str], None],
+                on_finished: Callable[[bool, bool, bool], None],
+                need_min: bool,
+                need_max: bool,
+                need_average: bool) -> None:
     path_to_data = create_directory_for_station(station_id)
     path_to_save = create_directory_for_trained_model(station_id)
 

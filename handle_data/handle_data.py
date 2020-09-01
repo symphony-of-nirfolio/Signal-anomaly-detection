@@ -1,4 +1,5 @@
 import datetime
+from typing import Callable
 
 import numpy as np
 import requests
@@ -8,11 +9,11 @@ from handle_data.info import Info
 
 
 def handle_data_to_files(
-        stations_info,
-        station_id,
-        on_error,
-        on_status_changed,
-        on_finished):
+        stations_info: dict,
+        station_id: str,
+        on_error: Callable[[str], None],
+        on_status_changed: Callable[[str], None],
+        on_finished: Callable[[], None]) -> None:
     site_path = "https://www.ncei.noaa.gov/access/services/data/v1?"
     dataset = "dataset=daily-summaries"
     data_types = "&dataTypes=TMAX,TMIN,TAVG"

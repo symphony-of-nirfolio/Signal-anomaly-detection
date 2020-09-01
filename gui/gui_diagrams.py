@@ -11,8 +11,8 @@ from handle_data.data_management import get_stations_data_from_file
 def gui_init_diagrams(ui: Ui_main_window,
                       main_window: QtWidgets.QMainWindow,
                       stations_info: dict,
-                      set_busy_by: Callable,
-                      is_busy_by: Callable) -> (Callable, Callable):
+                      set_busy_by: Callable[..., None],
+                      is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None]):
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
     select_period_type_combo_box = ui.select_period_type_combo_box
@@ -29,7 +29,7 @@ def gui_init_diagrams(ui: Ui_main_window,
     def get_station_id() -> str:
         return select_station_id_for_diagram_combo_box.currentText()
 
-    def update_station_id_combo_box():
+    def update_station_id_combo_box() -> None:
         nonlocal is_updating_station_id_combo_box
         is_updating_station_id_combo_box = True
 
@@ -54,13 +54,13 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         is_updating_station_id_combo_box = False
 
-    def update_diagram():
+    def update_diagram() -> None:
         pass
 
-    def update_diagram_override():
+    def update_diagram_override() -> None:
         update_diagram()
 
-    def load(station_id: str):
+    def load(station_id: str) -> None:
         nonlocal data, min_temperature_combo_box, max_temperature_combo_box, average_temperature_combo_box
 
         data = get_stations_data_from_file(station_id)
@@ -76,7 +76,7 @@ def gui_init_diagrams(ui: Ui_main_window,
                 stations_info[station_id]["need_max"],
                 stations_info[station_id]["need_average"])
 
-    def on_station_id_combo_box_selected(index: int):
+    def on_station_id_combo_box_selected(index: int) -> None:
         if is_updating_station_id_combo_box:
             return
 
@@ -90,28 +90,28 @@ def gui_init_diagrams(ui: Ui_main_window,
                 set_busy_by(station_id, is_diagram=True)
                 load(station_id)
 
-    def on_extract_finished():
+    def on_extract_finished() -> None:
         update_station_id_combo_box()
 
-    def busy_listener():
+    def busy_listener() -> None:
         update_station_id_combo_box()
 
-    def get_data():
+    def get_data() -> dict:
         return data
 
-    def need_show_min():
+    def need_show_min() -> bool:
         if min_temperature_combo_box is not None:
             # noinspection PyUnresolvedReferences
             return min_temperature_combo_box.isChecked()
         return False
 
-    def need_show_max():
+    def need_show_max() -> bool:
         if max_temperature_combo_box is not None:
             # noinspection PyUnresolvedReferences
             return max_temperature_combo_box.isChecked()
         return False
 
-    def need_show_average():
+    def need_show_average() -> bool:
         if average_temperature_combo_box is not None:
             # noinspection PyUnresolvedReferences
             return average_temperature_combo_box.isChecked()

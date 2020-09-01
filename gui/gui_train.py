@@ -15,8 +15,8 @@ def gui_init_train(ui: Ui_main_window,
                    event_list: list,
                    thread_pool: QThreadPool,
                    stations_info: dict,
-                   set_busy_by: Callable,
-                   is_busy_by: Callable) -> (Callable, Callable):
+                   set_busy_by: Callable[..., None],
+                   is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None]):
     select_station_id_for_training_combo_box = ui.select_station_id_for_training_combo_box
     select_training_observation_vertical_layout = ui.select_training_observation_vertical_layout
     select_training_observations_group_box = ui.select_training_observations_group_box
@@ -32,7 +32,7 @@ def gui_init_train(ui: Ui_main_window,
     def get_station_id() -> str:
         return select_station_id_for_training_combo_box.currentText()
 
-    def update_enabled_train_button():
+    def update_enabled_train_button() -> None:
         if is_training:
             train_push_button.setEnabled(False)
             return
@@ -47,15 +47,15 @@ def gui_init_train(ui: Ui_main_window,
             else:
                 train_push_button.setEnabled(True)
 
-    def lock_components():
+    def lock_components() -> None:
         select_training_observations_group_box.setEnabled(False)
         select_station_id_for_training_combo_box.setEnabled(False)
 
-    def unlock_components():
+    def unlock_components() -> None:
         select_training_observations_group_box.setEnabled(True)
         select_station_id_for_training_combo_box.setEnabled(True)
 
-    def on_train_started():
+    def on_train_started() -> None:
         nonlocal is_training
         is_training = True
 
@@ -64,7 +64,7 @@ def gui_init_train(ui: Ui_main_window,
         station_id = get_station_id()
         set_busy_by(station_id, is_train=True)
 
-    def on_train_finished():
+    def on_train_finished() -> None:
         nonlocal is_training
         is_training = False
 
@@ -126,14 +126,14 @@ def gui_init_train(ui: Ui_main_window,
     def on_station_id_combo_box_selected(index: int) -> None:
         update_train_button()
 
-    def on_error(message):
+    def on_error(message: str) -> None:
         on_train_finished()
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
-    def on_status_changed(status):
+    def on_status_changed(status: str) -> None:
         training_status_value_label.setText(status)
 
-    def on_finished(need_min, need_max, need_average):
+    def on_finished(need_min: bool, need_max: bool, need_average: bool) -> None:
         on_train_finished()
 
         station_id = get_station_id()
@@ -142,16 +142,16 @@ def gui_init_train(ui: Ui_main_window,
         stations_info[station_id]["is_max_trained"] = need_max
         stations_info[station_id]["is_average_trained"] = need_average
 
-    def on_error_to_event_list(message):
+    def on_error_to_event_list(message: str) -> None:
         event_list.append(lambda: on_error(message))
 
-    def on_status_changed_to_event_list(status):
+    def on_status_changed_to_event_list(status: str) -> None:
         event_list.append(lambda: on_status_changed(status))
 
-    def on_finished_to_event_list(need_min, need_max, need_average):
+    def on_finished_to_event_list(need_min: bool, need_max: bool, need_average: bool) -> None:
         event_list.append(lambda: on_finished(need_min, need_max, need_average))
 
-    def on_train_push_button_clicked():
+    def on_train_push_button_clicked() -> None:
         on_train_started()
 
         need_min_temperature = False
@@ -181,10 +181,10 @@ def gui_init_train(ui: Ui_main_window,
             need_average_temperature)
         thread_pool.start(thread)
 
-    def on_extract_finished():
+    def on_extract_finished() -> None:
         update_station_id_combo_box()
 
-    def busy_listener():
+    def busy_listener() -> None:
         update_enabled_train_button()
 
     update_station_id_combo_box()

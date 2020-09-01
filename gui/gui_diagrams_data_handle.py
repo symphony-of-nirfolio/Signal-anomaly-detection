@@ -9,10 +9,10 @@ from gui.main_window import Ui_main_window
 
 def gui_init_diagrams_data_handle(ui: Ui_main_window,
                                   main_window: QtWidgets.QMainWindow,
-                                  get_data: Callable,
-                                  need_show_min: Callable,
-                                  need_show_max: Callable,
-                                  need_show_average: Callable) -> (Callable, Callable):
+                                  get_data: Callable[[], dict],
+                                  need_show_min: Callable[[], bool],
+                                  need_show_max: Callable[[], bool],
+                                  need_show_average: Callable[[], bool]) -> Callable[[], None]:
     select_period_combo_box = ui.select_period_combo_box
     select_period_type_combo_box = ui.select_period_type_combo_box
     diagram_vertical_layout = ui.diagram_vertical_layout
@@ -21,19 +21,19 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
     current_period_type_index = 0
     current_period_index = 0
 
-    def reset_period_combo_box():
+    def reset_period_combo_box() -> None:
         select_period_combo_box.clear()
         select_period_combo_box.addItem("(None)")
 
         current_data_list.clear()
         current_data_list.append(None)
 
-    def fill_periods_by_months():
+    def fill_periods_by_months() -> None:
         for key in get_data():
             select_period_combo_box.addItem(key + "m")
             current_data_list.append(get_data()[key])
 
-    def split_data_by_years_and_months():
+    def split_data_by_years_and_months() -> dict:
         years_and_months_data = {}
 
         for key in get_data():
@@ -46,7 +46,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
                 years_and_months_data[year] = {month: (get_data()[key], year)}
         return years_and_months_data
 
-    def get_seasons(years_and_months_data, seasons_data):
+    def get_seasons(years_and_months_data, seasons_data) -> None:
         for key in years_and_months_data:
             current_data = years_and_months_data[key]
 
@@ -108,7 +108,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
             if len(winter) > 0:
                 seasons_data[winter_name] = winter
 
-    def fill_periods_by_season():
+    def fill_periods_by_season() -> None:
         years_and_months_data = split_data_by_years_and_months()
         seasons_data = {}
         get_seasons(years_and_months_data, seasons_data)
@@ -117,20 +117,20 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
             select_period_combo_box.addItem(key)
             current_data_list.append(seasons_data[key])
 
-    def fill_periods_by_years():
+    def fill_periods_by_years() -> None:
         years_and_months_data = split_data_by_years_and_months()
 
         for key in years_and_months_data:
             select_period_combo_box.addItem(key + "y")
             current_data_list.append(years_and_months_data[key])
 
-    def fill_periods_by_all_data():
+    def fill_periods_by_all_data() -> None:
         years_and_months_data = split_data_by_years_and_months()
 
         select_period_combo_box.addItem("All")
         current_data_list.append(years_and_months_data)
 
-    def update_diagram():
+    def update_diagram() -> None:
         remove_diagrams(diagram_vertical_layout)
 
         need_min_temperature = need_show_min()
@@ -158,7 +158,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         elif current_period_type_index == 4 and current_period_index > 0:
             show_diagram_by_several_all_data(*current_data)
 
-    def on_period_type_combo_box_index_changed(index):
+    def on_period_type_combo_box_index_changed(index: int) -> None:
         nonlocal current_period_type_index
         current_period_type_index = index
 
@@ -173,7 +173,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         elif index == 4:
             fill_periods_by_all_data()
 
-    def on_period_combo_box_index_changed(index):
+    def on_period_combo_box_index_changed(index: int) -> None:
         nonlocal current_period_index
         current_period_index = index
 
