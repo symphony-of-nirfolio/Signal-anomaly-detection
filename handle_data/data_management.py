@@ -43,6 +43,17 @@ def create_directory_for_station(station_id):
     return path
 
 
+def get_directory_path_for_trained_model(station_id):
+    return stations_data_path + "/" + station_id + "/model"
+
+
+def create_directory_for_trained_model(station_id):
+    path = get_directory_path_for_trained_model(station_id)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
 def _get_data_from_file(path, key, data):
     try:
         current_data = np.fromfile(path, sep=',')

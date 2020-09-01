@@ -1,6 +1,7 @@
-import requests
 import datetime
+
 import numpy as np
+import requests
 
 from handle_data.data_management import create_directory_for_station, write_stations_info_to_json
 from handle_data.info import Info
@@ -100,14 +101,14 @@ def handle_data_to_files(
     is_trained = False
     if station_id in stations_info:
         is_trained = stations_info[station_id]["is_trained"]
+    else:
+        stations_info[station_id] = {}
 
-    stations_info[station_id] =\
-        {
-            "need_min": contain_min_temperature,
-            "need_max": contain_max_temperature,
-            "need_average": contain_average_temperature,
-            "is_trained": is_trained
-        }
+    stations_info[station_id]["need_min"] = contain_min_temperature
+    stations_info[station_id]["need_max"] = contain_max_temperature
+    stations_info[station_id]["need_average"] = contain_average_temperature
+    stations_info[station_id]["is_trained"] = is_trained
+
     write_stations_info_to_json(stations_info)
 
     for key in data:
@@ -140,4 +141,4 @@ def handle_data_to_files(
     print("Finished")
 
     on_status_changed("Finished")
-    on_finished(data, contain_min_temperature, contain_max_temperature, contain_average_temperature)
+    on_finished()

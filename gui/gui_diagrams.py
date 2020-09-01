@@ -1,181 +1,132 @@
-import matplotlib
-from datetime import date
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
-from matplotlib.figure import Figure
-from handle_data.info import Info
+from typing import Callable
 
-matplotlib.use('Qt5Agg')
+from PyQt5 import QtWidgets
 
-
-def remove_diagrams(vertical_layout):
-    for i in reversed(range(vertical_layout.count())):
-        vertical_layout.itemAt(i).widget().deleteLater()
+from gui.gui_available_observaion import set_observation, reset_observation
+from gui.gui_diagrams_data_handle import gui_init_diagrams_data_handle
+from gui.main_window import Ui_main_window
+from handle_data.data_management import get_stations_data_from_file
 
 
-def create_diagram_canvas(main_window, vertical_layout):
-    figure = Figure(figsize=(5, 4), dpi=100)
-    figure_canvas = FigureCanvasQTAgg(figure)
-    figure_canvas.axes = figure.add_subplot(111)
+def gui_init_diagrams(ui: Ui_main_window,
+                      main_window: QtWidgets.QMainWindow,
+                      stations_info: dict,
+                      set_busy_by: Callable,
+                      is_busy_by: Callable) -> (Callable, Callable):
+    select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
+    select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
+    select_period_type_combo_box = ui.select_period_type_combo_box
 
-    toolbar = NavigationToolbar2QT(figure_canvas, main_window)
+    data = {}
+    last_station_id = ""
 
-    vertical_layout.addWidget(figure_canvas)
-    vertical_layout.addWidget(toolbar)
+    min_temperature_combo_box = None
+    max_temperature_combo_box = None
+    average_temperature_combo_box = None
 
-    return figure_canvas
+    is_updating_station_id_combo_box = False
 
+    def get_station_id() -> str:
+        return select_station_id_for_diagram_combo_box.currentText()
 
-def get_min_form_info(info: Info):
-    return info.min
+    def update_station_id_combo_box():
+        nonlocal is_updating_station_id_combo_box
+        is_updating_station_id_combo_box = True
 
+        index = select_station_id_for_diagram_combo_box.currentIndex()
 
-def get_max_form_info(info: Info):
-    return info.max
+        select_station_id_for_diagram_combo_box.clear()
+        select_station_id_for_diagram_combo_box.addItem("(None)")
 
+        i = 1
+        for key in stations_info:
+            select_station_id_for_diagram_combo_box.addItem(key)
 
-def get_average_from_info(info: Info):
-    return info.average
+            if is_busy_by(key, is_diagram=True):
+                select_station_id_for_diagram_combo_box.model().item(i).setEnabled(False)
 
+            i += 1
 
-def get_data_points(data, offset, get_data_from_info, data_offset=0.0):
-    days = []
-    observations = []
+        if index < len(select_station_id_for_diagram_combo_box):
+            select_station_id_for_diagram_combo_box.setCurrentIndex(index)
+        else:
+            select_station_id_for_diagram_combo_box.setCurrentIndex(len(select_station_id_for_diagram_combo_box) - 1)
 
-    for info in data:
-        observation = get_data_from_info(info)
-        if observation < 100000.0:
-            days.append(info.day + offset)
-            observations.append(observation + data_offset)
+        is_updating_station_id_combo_box = False
 
-    return days, observations
+    def update_diagram():
+        pass
 
+    def update_diagram_override():
+        update_diagram()
 
-def get_min_points(data, offset):
-    return get_data_points(data, offset, get_min_form_info, data_offset=-273.15)
+    def load(station_id: str):
+        nonlocal data, min_temperature_combo_box, max_temperature_combo_box, average_temperature_combo_box
 
+        data = get_stations_data_from_file(station_id)
 
-def get_max_points(data, offset):
-    return get_data_points(data, offset, get_max_form_info, data_offset=-273.15)
+        select_period_type_combo_box.setCurrentIndex(0)
 
+        reset_observation(select_diagram_observation_vertical_layout)
+        min_temperature_combo_box, max_temperature_combo_box, average_temperature_combo_box = \
+            set_observation(
+                select_diagram_observation_vertical_layout,
+                lambda state: update_diagram_override(),
+                stations_info[station_id]["need_min"],
+                stations_info[station_id]["need_max"],
+                stations_info[station_id]["need_average"])
 
-def get_average_points(data, offset):
-    return get_data_points(data, offset, get_average_from_info, data_offset=-273.15)
+    def on_station_id_combo_box_selected(index: int):
+        if is_updating_station_id_combo_box:
+            return
 
+        if index <= 0:
+            select_period_type_combo_box.setCurrentIndex(0)
+            reset_observation(select_diagram_observation_vertical_layout)
+            set_busy_by("", is_diagram=True)
+        else:
+            station_id = get_station_id()
+            if station_id != last_station_id:
+                set_busy_by(station_id, is_diagram=True)
+                load(station_id)
 
-def get_points_by_month(data, get_points):
-    return get_points(data, 0)
+    def on_extract_finished():
+        update_station_id_combo_box()
 
+    def busy_listener():
+        update_station_id_combo_box()
 
-def calculate_offset(year, month):
-    month_begin = date(int(year), int(month), 1)
-    next_month_begin = date(
-        int(year) if month != "12" else int(year) + 1,
-        int(month) + 1 if month != "12" else 1,
-        1)
+    def get_data():
+        return data
 
-    days = (next_month_begin - month_begin).days
-    return days
+    def need_show_min():
+        if min_temperature_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            return min_temperature_combo_box.isChecked()
+        return False
 
+    def need_show_max():
+        if max_temperature_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            return max_temperature_combo_box.isChecked()
+        return False
 
-def get_points_by_several_months(data, get_points):
-    days_all = []
-    observations_all = []
+    def need_show_average():
+        if average_temperature_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            return average_temperature_combo_box.isChecked()
+        return False
 
-    offset = 0
-    for key in data:
-        days, observations = get_points(data[key][0], offset)
-        days_all += days
-        observations_all += observations
+    update_station_id_combo_box()
 
-        offset += calculate_offset(data[key][1], key)
+    select_station_id_for_diagram_combo_box.currentIndexChanged.connect(on_station_id_combo_box_selected)
 
-    return days_all, observations_all
+    update_diagram = gui_init_diagrams_data_handle(
+        ui,
+        main_window,
+        get_data,
+        need_show_min,
+        need_show_max,
+        need_show_average)
 
-
-def get_points_by_all_data(data, get_points):
-    days_all = []
-    observations_all = []
-
-    offset = 0
-    for year in data:
-        current_data = data[year]
-
-        for key in current_data:
-            days, observations = get_points(current_data[key][0], offset)
-            days_all += days
-            observations_all += observations
-
-            offset += calculate_offset(current_data[key][1], key)
-
-    return days_all, observations_all
-
-
-def show_diagram_by_points_function(main_window, vertical_layout, data, get_points,
-                                    need_min_temperature=False,
-                                    need_max_temperature=False,
-                                    need_average_temperature=False):
-    figure_canvas = create_diagram_canvas(main_window, vertical_layout)
-
-    size = 0
-    days = []
-    observations = []
-    colors = []
-    labels = []
-
-    if need_max_temperature:
-        days_form_max, max_temperature = get_points(data, get_max_points)
-        days.append(days_form_max)
-        observations.append(max_temperature)
-        colors.append('r')
-        labels.append("Max")
-        size += 1
-
-    if need_average_temperature:
-        days_form_average, average_temperature = get_points(data, get_average_points)
-        days.append(days_form_average)
-        observations.append(average_temperature)
-        colors.append('m')
-        labels.append("Average")
-        size += 1
-
-    if need_min_temperature:
-        days_form_min, min_temperature = get_points(data, get_min_points)
-        days.append(days_form_min)
-        observations.append(min_temperature)
-        colors.append('y')
-        labels.append("Min")
-        size += 1
-
-    for i in range(size):
-        figure_canvas.axes.plot(days[i], observations[i], colors[i])
-    figure_canvas.axes.legend(labels)
-
-
-def show_diagram_by_month(main_window, vertical_layout, data,
-                          need_min_temperature=False,
-                          need_max_temperature=False,
-                          need_average_temperature=False):
-    show_diagram_by_points_function(main_window, vertical_layout, data, get_points_by_month,
-                                    need_min_temperature=need_min_temperature,
-                                    need_max_temperature=need_max_temperature,
-                                    need_average_temperature=need_average_temperature)
-
-
-def show_diagram_by_several_months(main_window, vertical_layout, data,
-                                   need_min_temperature=False,
-                                   need_max_temperature=False,
-                                   need_average_temperature=False):
-    show_diagram_by_points_function(main_window, vertical_layout, data, get_points_by_several_months,
-                                    need_min_temperature=need_min_temperature,
-                                    need_max_temperature=need_max_temperature,
-                                    need_average_temperature=need_average_temperature)
-
-
-def show_diagram_by_several_all_data(main_window, vertical_layout, data,
-                                     need_min_temperature=False,
-                                     need_max_temperature=False,
-                                     need_average_temperature=False):
-    show_diagram_by_points_function(main_window, vertical_layout, data, get_points_by_all_data,
-                                    need_min_temperature=need_min_temperature,
-                                    need_max_temperature=need_max_temperature,
-                                    need_average_temperature=need_average_temperature)
+    return busy_listener, on_extract_finished
