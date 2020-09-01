@@ -141,7 +141,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
         days_form_max, max_temperature = get_points(data, _get_max_points)
         days.append(days_form_max)
         observations.append(max_temperature)
-        colors.append('r')
+        colors.append('.-r')
         labels.append("Max")
         size += 1
 
@@ -149,7 +149,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
         days_form_average, average_temperature = get_points(data, _get_average_points)
         days.append(days_form_average)
         observations.append(average_temperature)
-        colors.append('m')
+        colors.append('.-m')
         labels.append("Average")
         size += 1
 
@@ -157,7 +157,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
         days_form_min, min_temperature = get_points(data, _get_min_points)
         days.append(days_form_min)
         observations.append(min_temperature)
-        colors.append('y')
+        colors.append('.-y')
         labels.append("Min")
         size += 1
 
