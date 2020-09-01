@@ -4,8 +4,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D
 from keras.models import Model, Sequential
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from CustomGenerator import SequenceGenerator
-import time
+from Backend.CustomGenerator import SequenceGenerator
 
 import random
 import numpy as np
@@ -72,14 +71,15 @@ def _rid_of_anomalies(data):
     data = data[data < 1000]
     plt.clf()
     res = plt.boxplot(data, vert=False)
-    min_ = min(data) - 10
-    max_ = max(data) + 10
+    min_ = _MIN_TEMPERATURE # min(data) - 10
+    max_ = _MAX_TEMPERATURE # max(data) + 10
     min_value = res['caps'][0].get_data()[0][0]
     max_value = res['caps'][1].get_data()[0][0]
     # plt.show()
     data = data[data >= min_value]
     data = data[data <= max_value]
-    data = np.array([(item - min_)/(max_ - min_) for item in data])
+    data = np.array([(item - min_)/(max_ - min_)*2 - 1 for item in data])
+    # print(min(data), max(data))
     return data
 
 
@@ -172,11 +172,3 @@ def train(station_id, path_to_data, columns, path_to_save):
         p.join()
 
     _delete_temp_data(path_to_save, station_id, columns)
-
-
-'''
-time1 = time.time()
-train('ui123', 'data', (1, 1, 1), 'nn')
-time2 = time.time()
-print('{:s} function took {:.3f} ms'.format(train.__name__, (time2 - time1) * 1000.0))
-'''
