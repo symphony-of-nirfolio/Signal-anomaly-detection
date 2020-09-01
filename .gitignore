@@ -242,3 +242,9 @@ dmypy.json
 .pytype/
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,python 
+
+# data files
+data
+
+# application for convert qt designer file to python
+gui/pyuic5.exe
