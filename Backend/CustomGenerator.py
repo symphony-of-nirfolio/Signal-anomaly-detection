@@ -19,6 +19,6 @@ class SequenceGenerator(keras.utils.Sequence):
             data = self.data[ind*8: ind*8 + 28]
             answer = np.append(answer, data)
 
-        oof = answer.reshape(self.batch_size, 28, 1)
+        answer = answer.reshape(self.batch_size, 28, 1)
 
-        return oof, oof.copy()
+        return answer, answer.copy()
