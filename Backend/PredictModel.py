@@ -1,18 +1,11 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D
-from keras.models import Model, Sequential
-from keras.callbacks import EarlyStopping, ModelCheckpoint
 from Backend.CustomGenerator import SequenceGenerator
 from Backend.TrainModel import _create_model, _COLUMN_TO_STR, _SEASON_NUMBER, _COLUMNS_NUMBER
 from Backend.TrainModel import _MIN_TEMPERATURE, _MAX_TEMPERATURE
 
-import random
 import numpy as np
-import shutil
-from matplotlib import pyplot as plt
-
 
 
 class Prediction:
@@ -80,7 +73,7 @@ class Prediction:
         results = self._model[_COLUMN_TO_STR[col]][season].predict(x=test_generator,
                                                                    steps=len(test_generator),
                                                                    verbose=0)
-        if len(data) == 28:
+        if len(data_to_predict) == 28:
             answer = (results[0, :] - data_to_predict)**2
         else:
             answer = (results[0, :] - data_to_predict[:28])**2
