@@ -68,7 +68,7 @@ def _merge_data_for_season(season, path_to_data, column):
     return merged_data
 
 
-def _rid_of_anomalies(data):
+def _rid_of_anomalies(data, path_to_nn, station, col, season):
     data = data[data < 1000]
     plt.clf()
     res = plt.boxplot(data, vert=False)
@@ -76,11 +76,21 @@ def _rid_of_anomalies(data):
     max_ = _MAX_TEMPERATURE # max(data) + 10
     min_value = res['caps'][0].get_data()[0][0]
     max_value = res['caps'][1].get_data()[0][0]
+    plt.clf()
+    plt.close()
     # plt.show()
     data = data[data >= min_value]
     data = data[data <= max_value]
     data = np.array([(item - min_)/(max_ - min_)*2 - 1 for item in data])
     # print(min(data), max(data))
+
+    file = open(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
+    if season == 3:
+        file.write(str(season) + ',' + str(min_) + ',' + str(max_))
+    else:
+        file.write(str(season) + ',' + str(min_) + ',' + str(max_) + ',')
+    file.close()
+
     return data
 
 
@@ -95,7 +105,7 @@ def _prepare_all_data(station_id, path_to_data, columns, path_to_save):
         for i in range(len(columns)):
             if columns[i]:
                 data = _merge_data_for_season(season, path_to_data, i + 1)
-                data = _rid_of_anomalies(data)
+                data = _rid_of_anomalies(data, path_to_save, station_id, i, season)
                 _save_temp_data(path_to_save, station_id, season, i, data)
 
 
