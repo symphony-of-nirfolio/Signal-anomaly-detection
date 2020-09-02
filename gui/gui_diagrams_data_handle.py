@@ -17,7 +17,10 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
                                   get_trained_on: Callable[[], Tuple[bool, bool, bool]],
                                   need_show_min: Callable[[], bool],
                                   need_show_max: Callable[[], bool],
-                                  need_show_average: Callable[[], bool]) -> Callable[[], None]:
+                                  need_show_average: Callable[[], bool],
+                                  set_show_min: Callable[[bool], None],
+                                  set_show_max: Callable[[bool], None],
+                                  set_show_average: Callable[[bool], None]) -> Callable[[], None]:
     select_period_type_combo_box = ui.select_period_type_combo_box
     diagram_vertical_layout = ui.diagram_vertical_layout
     periods_list_widget = ui.periods_list_widget
@@ -334,13 +337,29 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
 
         update_diagram()
 
-    def update_periods_list_colors():
+    def set_observation_check_boxes_to(is_min_checked=False, is_max_checked=False, is_average_checked=False):
+        set_show_min(is_min_checked)
+        set_show_max(is_max_checked)
+        set_show_average(is_average_checked)
+
+    def on_observation_for_anomaly_index_changed(index: int):
         fill_periods_list()
+
+        anomaly_text = get_anomaly_text()
+
+        if anomaly_text == 'min':
+            set_observation_check_boxes_to(is_min_checked=True)
+        elif anomaly_text == 'max':
+            set_observation_check_boxes_to(is_max_checked=True)
+        elif anomaly_text == 'average':
+            set_observation_check_boxes_to(is_average_checked=True)
+        else:
+            set_observation_check_boxes_to(is_min_checked=True, is_max_checked=True, is_average_checked=True)
 
         update_diagram()
 
     select_period_type_combo_box.currentIndexChanged.connect(on_period_type_combo_box_index_changed)
     periods_list_widget.clicked.connect(on_periods_list_index_changed)
-    select_observation_for_anomaly_combo_box.currentIndexChanged.connect(lambda index: update_periods_list_colors())
+    select_observation_for_anomaly_combo_box.currentIndexChanged.connect(on_observation_for_anomaly_index_changed)
 
     return update_diagram

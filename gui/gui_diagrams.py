@@ -217,6 +217,21 @@ def gui_init_diagrams(ui: Ui_main_window,
             return average_temperature_combo_box.isChecked()
         return False
 
+    def set_show_min(is_checked: bool) -> None:
+        if min_temperature_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            min_temperature_combo_box.setChecked(is_checked)
+
+    def set_show_max(is_checked: bool) -> None:
+        if max_temperature_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            max_temperature_combo_box.setChecked(is_checked)
+
+    def set_show_average(is_checked: bool) -> None:
+        if average_temperature_combo_box is not None:
+            # noinspection PyUnresolvedReferences
+            average_temperature_combo_box.setChecked(is_checked)
+
     update_station_id_combo_box()
 
     select_station_id_for_diagram_combo_box.currentIndexChanged.connect(on_station_id_combo_box_selected)
@@ -230,6 +245,9 @@ def gui_init_diagrams(ui: Ui_main_window,
         get_trained_on,
         need_show_min,
         need_show_max,
-        need_show_average)
+        need_show_average,
+        set_show_min,
+        set_show_max,
+        set_show_average)
 
     return busy_listener, on_extract_finished
