@@ -93,11 +93,11 @@ def gui_init_train(ui: Ui_main_window,
 
         station_id = get_station_id()
 
+        reset_observation(select_training_observation_vertical_layout)
+
         if station_id == "(None)" or station_id == "":
             train_push_button.setText("Train")
         else:
-            reset_observation(select_training_observation_vertical_layout)
-
             if stations_info[station_id]["is_trained"]:
                 train_push_button.setText("Retrain")
 
