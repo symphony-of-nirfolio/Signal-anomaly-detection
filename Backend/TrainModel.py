@@ -70,10 +70,11 @@ def _merge_data_for_season(season, path_to_data, column):
 
 def _rid_of_anomalies(data, path_to_nn, station, col, season):
     data = data[data < 1000]
+    data = data[data > 0]
     plt.clf()
     res = plt.boxplot(data, vert=False)
-    min_ = _MIN_TEMPERATURE # min(data) - 10
-    max_ = _MAX_TEMPERATURE # max(data) + 10
+    min_ = min(data) - 10
+    max_ = max(data) + 10
     min_value = res['caps'][0].get_data()[0][0]
     max_value = res['caps'][1].get_data()[0][0]
     plt.clf()
