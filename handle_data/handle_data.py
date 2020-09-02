@@ -109,6 +109,8 @@ def handle_data_to_files(
     stations_info[station_id]["need_max"] = contain_max_temperature
     stations_info[station_id]["need_average"] = contain_average_temperature
     stations_info[station_id]["is_trained"] = is_trained
+    stations_info[station_id]["is_cashed_data"] = False
+    stations_info[station_id]["is_cashed_anomaly_data"] = False
 
     write_stations_info_to_json(stations_info)
 

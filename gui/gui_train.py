@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox
 from gui.gui_available_observaion import reset_observation, set_observation
 from gui.main_window import Ui_main_window
 from gui.worker import Worker
+from handle_data.data_management import write_stations_info_to_json
 from handle_data.handle_neural_network import train_model
 
 
@@ -141,6 +142,10 @@ def gui_init_train(ui: Ui_main_window,
         stations_info[station_id]["is_min_trained"] = need_min
         stations_info[station_id]["is_max_trained"] = need_max
         stations_info[station_id]["is_average_trained"] = need_average
+        stations_info[station_id]["is_cashed_data"] = False
+        stations_info[station_id]["is_cashed_anomaly_data"] = False
+
+        write_stations_info_to_json(stations_info)
 
     def on_error_to_event_list(message: str) -> None:
         event_list.append(lambda: on_error(message))
