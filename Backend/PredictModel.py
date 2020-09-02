@@ -1,24 +1,18 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D
-from keras.models import Model, Sequential
-from keras.callbacks import EarlyStopping, ModelCheckpoint
 from Backend.CustomGenerator import SequenceGenerator
 from Backend.TrainModel import _create_model, _COLUMN_TO_STR, _SEASON_NUMBER, _COLUMNS_NUMBER
 from Backend.TrainModel import _MIN_TEMPERATURE, _MAX_TEMPERATURE
 
-import random
 import numpy as np
-import shutil
-from matplotlib import pyplot as plt
-
 
 
 class Prediction:
     _instance = None
     _model = None
     _station = None
+    _path_to_nn = None
 
     def __init__(self):
         raise RuntimeError('Call instance() instead')
@@ -30,6 +24,7 @@ class Prediction:
         return cls._instance
 
     def _load_nn(self, path_to_nn, station, col, season):
+        self._path_to_nn = path_to_nn
         nn_file = path_to_nn + '/' + station + '/' + col + '/' + str(season) + '.h5'
         if os.path.exists(nn_file):
             model = _create_model()
@@ -48,10 +43,14 @@ class Prediction:
             for season in range(_SEASON_NUMBER):
                 self._model[col_str][season] = self._load_nn(path_to_nn, station, col_str, season)
 
-    def _prepare_data(self, data):
+    def _get_range(self, path_to_nn, station, col, season):
+        data = np.fromfile(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', sep=',')
+        data = np.reshape(data, (data.shape[0]//3, 3))
+        return data[season, 1], data[season, 2]
+
+    def _prepare_data(self, data, path_to_nn, station, col, season):
         data = data[10000 > data]
-        min_ = _MIN_TEMPERATURE
-        max_ = _MAX_TEMPERATURE
+        min_, max_ = self._get_range(path_to_nn, station, col, season)
         data = np.array([(item - min_)/(max_ - min_)*2 - 1 for item in data])
         if len(data) < 28:
             data = np.append(data, np.zeros(28-len(data)))
@@ -71,7 +70,7 @@ class Prediction:
 
     def get_result(self, data, col, season):
 
-        data_to_predict = self._prepare_data(data)
+        data_to_predict = self._prepare_data(data, self._path_to_nn, self._station, col, season)
         if len(data_to_predict) == 28:
             test_generator = SequenceGenerator(np.array([0]), 1, data_to_predict, 1)
         else:
@@ -80,17 +79,17 @@ class Prediction:
         results = self._model[_COLUMN_TO_STR[col]][season].predict(x=test_generator,
                                                                    steps=len(test_generator),
                                                                    verbose=0)
-        if len(data) == 28:
+        if len(data_to_predict) == 28:
             answer = (results[0, :] - data_to_predict)**2
         else:
             answer = (results[0, :] - data_to_predict[:28])**2
             answer = np.append(answer, (results[1, 2*28 - len(data_to_predict):] - data_to_predict[28:])**2)
 
-        answer = self._shift(data_to_predict, answer)
+        answer = self._shift(data, answer)
 
-        if max(answer) > 0.006:
+        if max(answer) > 0.06:
             return answer, 2
-        elif max(answer) > 0.003:
+        elif max(answer) > 0.03:
             return answer, 1
         else:
             return answer, 0
