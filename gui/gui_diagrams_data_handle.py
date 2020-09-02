@@ -1,5 +1,4 @@
-from random import random
-from typing import Callable, Any
+from typing import Callable, Any, Tuple
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QColor
@@ -13,6 +12,9 @@ from gui.main_window import Ui_main_window
 def gui_init_diagrams_data_handle(ui: Ui_main_window,
                                   main_window: QtWidgets.QMainWindow,
                                   get_data: Callable[[], dict],
+                                  get_anomaly_data: Callable[[], dict],
+                                  is_trained: Callable[[], bool],
+                                  get_trained_on: Callable[[], Tuple[bool, bool, bool]],
                                   need_show_min: Callable[[], bool],
                                   need_show_max: Callable[[], bool],
                                   need_show_average: Callable[[], bool]) -> Callable[[], None]:
@@ -22,20 +24,33 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
     select_observation_for_anomaly_combo_box = ui.select_observation_for_anomaly_combo_box
 
     current_data_dict = {}
+    current_anomaly_data_dict = {}
     current_period_type_index = 0
     current_period_index = 0
-
-    def reset_periods_dict() -> None:
-        current_data_dict.clear()
-        current_data_dict["(None)"] = "(None)"
 
     def reset_periods_list() -> None:
         periods_list_widget.clear()
 
-    def add_item_to_periods(text: str) -> None:
-        new_list_widget_item = QListWidgetItem(text)
-        if select_observation_for_anomaly_combo_box.currentIndex() > 0:
-            new_list_widget_item.setBackground(QColor('#7fc97f') if random() < 0.8 else QColor('#ff1010'))
+    def reset_periods() -> None:
+        current_data_dict.clear()
+        current_anomaly_data_dict.clear()
+        reset_periods_list()
+
+    def add_item_to_periods(key: str) -> None:
+        new_list_widget_item = QListWidgetItem(key)
+
+        colors = ["#7fc97f", "#ffb200", "#ff1f00"]
+
+        if is_trained():
+            if select_observation_for_anomaly_combo_box.currentText() == "Min temperature":
+                current_anomaly_value = current_anomaly_data_dict[key]["min"][1]
+                new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
+            elif select_observation_for_anomaly_combo_box.currentText() == "Max temperature":
+                current_anomaly_value = current_anomaly_data_dict[key]["max"][1]
+                new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
+            elif select_observation_for_anomaly_combo_box.currentText() == "Average temperature":
+                current_anomaly_value = current_anomaly_data_dict[key]["average"][1]
+                new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
 
         periods_list_widget.addItem(new_list_widget_item)
 
@@ -47,22 +62,26 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
 
     def fill_periods_by_months() -> None:
         for key in get_data():
-            current_data_dict[key + "m"] = get_data()[key]
+            current_key = key + "m"
+            current_data_dict[current_key] = get_data()[key]
 
-    def split_data_by_years_and_months() -> dict:
+            if is_trained():
+                current_anomaly_data_dict[current_key] = get_anomaly_data()[key]
+
+    def split_data_by_years_and_months(data: dict) -> dict:
         years_and_months_data = {}
 
-        for key in get_data():
+        for key in data:
             year = key[:4]
             month = key[-2:]
 
             if year in years_and_months_data:
-                years_and_months_data[year][month] = (get_data()[key], year)
+                years_and_months_data[year][month] = (data[key], year)
             else:
-                years_and_months_data[year] = {month: (get_data()[key], year)}
+                years_and_months_data[year] = {month: (data[key], year)}
         return years_and_months_data
 
-    def get_seasons(years_and_months_data, seasons_data) -> None:
+    def get_seasons(years_and_months_data: dict, seasons_data: dict) -> None:
         for key in years_and_months_data:
             current_data = years_and_months_data[key]
 
@@ -124,24 +143,123 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
             if len(winter) > 0:
                 seasons_data[winter_name] = winter
 
+    def get_max_anomaly_by_seasons(seasons: dict) -> dict:
+        new_seasons = {}
+
+        for season in seasons:
+            new_seasons[season] = {}
+            if get_trained_on()[0]:
+                max_anomaly = 0
+                for key in seasons[season]:
+                    max_anomaly = max(max_anomaly, seasons[season][key][0]["min"][1])
+                new_seasons[season]["min"] = (seasons[season], max_anomaly)
+
+            if get_trained_on()[1]:
+                max_anomaly = 0
+                for key in seasons[season]:
+                    max_anomaly = max(max_anomaly, seasons[season][key][0]["max"][1])
+                new_seasons[season]["max"] = (seasons[season], max_anomaly)
+
+            if get_trained_on()[2]:
+                max_anomaly = 0
+                for key in seasons[season]:
+                    max_anomaly = max(max_anomaly, seasons[season][key][0]["average"][1])
+                new_seasons[season]["average"] = (seasons[season], max_anomaly)
+
+        return new_seasons
+
+    def get_max_anomaly_by_years(years: dict) -> dict:
+        new_years = {}
+
+        for year in years:
+            new_years[year] = {}
+            if get_trained_on()[0]:
+                max_anomaly = 0
+                for key in years[year]:
+                    max_anomaly = max(max_anomaly, years[year][key][0]["min"][1])
+                new_years[year]["min"] = (years[year], max_anomaly)
+            if get_trained_on()[1]:
+                max_anomaly = 0
+                for key in years[year]:
+                    max_anomaly = max(max_anomaly, years[year][key][0]["max"][1])
+                new_years[year]["max"] = (years[year], max_anomaly)
+            if get_trained_on()[2]:
+                max_anomaly = 0
+                for key in years[year]:
+                    max_anomaly = max(max_anomaly, years[year][key][0]["average"][1])
+                new_years[year]["average"] = (years[year], max_anomaly)
+
+        return new_years
+
+    def get_max_anomaly_by_all_data(years: dict) -> dict:
+        new_years = {}
+
+        if get_trained_on()[0]:
+            max_anomaly = 0
+            for year in years:
+                for key in years[year]:
+                    max_anomaly = max(max_anomaly, years[year][key][0]["min"][1])
+            new_years["min"] = (years, max_anomaly)
+
+        if get_trained_on()[1]:
+            max_anomaly = 0
+            for year in years:
+                for key in years[year]:
+                    max_anomaly = max(max_anomaly, years[year][key][0]["max"][1])
+            new_years["max"] = (years, max_anomaly)
+
+        if get_trained_on()[2]:
+            max_anomaly = 0
+            for year in years:
+                for key in years[year]:
+                    max_anomaly = max(max_anomaly, years[year][key][0]["average"][1])
+            new_years["average"] = (years, max_anomaly)
+
+        return new_years
+
     def fill_periods_by_season() -> None:
-        years_and_months_data = split_data_by_years_and_months()
+        years_and_months_data = split_data_by_years_and_months(get_data())
         seasons_data = {}
         get_seasons(years_and_months_data, seasons_data)
 
+        anomaly_seasons_data = {}
+        if is_trained():
+            years_and_months_anomaly_data = split_data_by_years_and_months(get_anomaly_data())
+            get_seasons(years_and_months_anomaly_data, anomaly_seasons_data)
+            anomaly_seasons_data = get_max_anomaly_by_seasons(anomaly_seasons_data)
+
         for key in seasons_data:
             current_data_dict[key] = seasons_data[key]
+            if is_trained():
+                current_anomaly_data_dict[key] = anomaly_seasons_data[key]
 
     def fill_periods_by_years() -> None:
-        years_and_months_data = split_data_by_years_and_months()
+        years_and_months_data = split_data_by_years_and_months(get_data())
+
+        years_and_months_anomaly_data = {}
+        if is_trained():
+            years_and_months_anomaly_data = split_data_by_years_and_months(get_anomaly_data())
+            years_and_months_anomaly_data = get_max_anomaly_by_years(years_and_months_anomaly_data)
 
         for key in years_and_months_data:
-            current_data_dict[key + "y"] = years_and_months_data[key]
+            current_key = key + "y"
+            current_data_dict[current_key] = years_and_months_data[key]
+            if is_trained():
+                current_anomaly_data_dict[current_key] = years_and_months_anomaly_data[key]
 
     def fill_periods_by_all_data() -> None:
-        years_and_months_data = split_data_by_years_and_months()
+        years_and_months_data = split_data_by_years_and_months(get_data())
 
-        current_data_dict["All"] = years_and_months_data
+        years_and_months_anomaly_data = {}
+        if is_trained():
+            years_and_months_anomaly_data = split_data_by_years_and_months(get_anomaly_data())
+            years_and_months_anomaly_data = get_max_anomaly_by_all_data(years_and_months_anomaly_data)
+
+        current_key = "All"
+        current_data_dict[current_key] = years_and_months_data
+
+        if is_trained():
+            current_anomaly_data_dict[current_key] = years_and_months_anomaly_data
 
     def update_diagram() -> None:
         remove_diagrams(diagram_vertical_layout)
@@ -175,7 +293,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         nonlocal current_period_type_index
         current_period_type_index = index
 
-        reset_periods_dict()
+        reset_periods()
 
         if index <= 0:
             return

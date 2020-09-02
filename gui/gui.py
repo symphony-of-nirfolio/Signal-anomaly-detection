@@ -80,6 +80,8 @@ def main_ui() -> None:
         gui_init_diagrams(
             ui,
             main_window,
+            event_list,
+            thread_pool,
             stations_info,
             set_busy_by,
             is_busy_by)
