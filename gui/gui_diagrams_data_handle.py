@@ -291,8 +291,13 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
             return
 
         current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
-                        current_anomaly_data_dict[current_period_index], get_anomaly_text(),
+                        {}, get_anomaly_text(),
                         need_min_temperature, need_max_temperature, need_average_temperature)
+
+        if is_trained():
+            current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
+                            current_anomaly_data_dict[current_period_index], get_anomaly_text(),
+                            need_min_temperature, need_max_temperature, need_average_temperature)
 
         if current_period_type_index == 1:
             show_diagram_by_month(*current_data)
