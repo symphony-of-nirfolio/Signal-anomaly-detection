@@ -16,6 +16,7 @@ def gui_init_diagrams(ui: Ui_main_window,
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
     select_period_type_combo_box = ui.select_period_type_combo_box
+    select_observation_for_anomaly_combo_box = ui.select_observation_for_anomaly_combo_box
 
     data = {}
     last_station_id = ""
@@ -75,6 +76,21 @@ def gui_init_diagrams(ui: Ui_main_window,
                 stations_info[station_id]["need_min"],
                 stations_info[station_id]["need_max"],
                 stations_info[station_id]["need_average"])
+
+        select_observation_for_anomaly_combo_box.clear()
+        select_observation_for_anomaly_combo_box.addItem("(None)")
+
+        if stations_info[station_id]["is_trained"]:
+            select_observation_for_anomaly_combo_box.setEnabled(True)
+
+            if stations_info[station_id]["is_max_trained"]:
+                select_observation_for_anomaly_combo_box.addItem("Max temperature")
+            if stations_info[station_id]["is_average_trained"]:
+                select_observation_for_anomaly_combo_box.addItem("Average temperature")
+            if stations_info[station_id]["is_min_trained"]:
+                select_observation_for_anomaly_combo_box.addItem("Min temperature")
+        else:
+            select_observation_for_anomaly_combo_box.setEnabled(False)
 
     def on_station_id_combo_box_selected(index: int) -> None:
         if is_updating_station_id_combo_box:

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1107</width>
+    <width>1514</width>
     <height>790</height>
    </rect>
   </property>
@@ -442,7 +442,7 @@
           <widget class="QGroupBox" name="select_diagram_observations_group_box">
            <property name="geometry">
             <rect>
-             <x>390</x>
+             <x>510</x>
              <y>30</y>
              <width>321</width>
              <height>121</height>
@@ -468,30 +468,12 @@
             <layout class="QVBoxLayout" name="select_diagram_observation_vertical_layout"/>
            </widget>
           </widget>
-          <widget class="QLabel" name="select_period_label">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>120</y>
-             <width>91</width>
-             <height>31</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>12</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Select period</string>
-           </property>
-          </widget>
           <widget class="QComboBox" name="select_period_type_combo_box">
            <property name="geometry">
             <rect>
-             <x>150</x>
+             <x>240</x>
              <y>80</y>
-             <width>231</width>
+             <width>261</width>
              <height>31</height>
             </rect>
            </property>
@@ -523,26 +505,6 @@
            <item>
             <property name="text">
              <string>All</string>
-            </property>
-           </item>
-          </widget>
-          <widget class="QComboBox" name="select_period_combo_box">
-           <property name="geometry">
-            <rect>
-             <x>150</x>
-             <y>120</y>
-             <width>231</width>
-             <height>31</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>12</pointsize>
-            </font>
-           </property>
-           <item>
-            <property name="text">
-             <string>(None)</string>
             </property>
            </item>
           </widget>
@@ -588,9 +550,9 @@
           <widget class="QComboBox" name="select_station_id_for_diagram_combo_box">
            <property name="geometry">
             <rect>
-             <x>150</x>
+             <x>240</x>
              <y>40</y>
-             <width>231</width>
+             <width>261</width>
              <height>31</height>
             </rect>
            </property>
@@ -605,22 +567,136 @@
             </property>
            </item>
           </widget>
+          <widget class="QComboBox" name="select_observation_for_anomaly_combo_box">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>240</x>
+             <y>120</y>
+             <width>261</width>
+             <height>31</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <item>
+            <property name="text">
+             <string>(None)</string>
+            </property>
+           </item>
+          </widget>
+          <widget class="QLabel" name="select_period_type_label_2">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>120</y>
+             <width>221</width>
+             <height>31</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Select observation for anomaly</string>
+           </property>
+          </widget>
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <layout class="QVBoxLayout" name="diagram_vertical_layout"/>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QLabel" name="label">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>20</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>20</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Periods</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QListWidget" name="periods_list_widget">
+              <property name="minimumSize">
+               <size>
+                <width>200</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>200</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
-           <widget class="QWidget" name="widget" native="true">
-            <property name="maximumSize">
-             <size>
-              <width>0</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QWidget" name="widget_2" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>700</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>0</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <layout class="QVBoxLayout" name="diagram_vertical_layout"/>
+              </item>
+              <item>
+               <widget class="QWidget" name="widget_3" native="true">
+                <property name="maximumSize">
+                 <size>
+                  <width>0</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
           </item>
          </layout>
         </item>
