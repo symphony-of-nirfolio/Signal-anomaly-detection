@@ -26,12 +26,24 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
     current_data_dict = {}
     current_anomaly_data_dict = {}
     current_period_type_index = 0
-    current_period_index = 0
+    current_period_index = ""
+
+    def get_anomaly_text() -> str:
+        if select_observation_for_anomaly_combo_box.currentText() == "Min temperature":
+            return "min"
+        elif select_observation_for_anomaly_combo_box.currentText() == "Max temperature":
+            return "max"
+        elif select_observation_for_anomaly_combo_box.currentText() == "Average temperature":
+            return "average"
+        return "none"
 
     def reset_periods_list() -> None:
         periods_list_widget.clear()
 
     def reset_periods() -> None:
+        nonlocal current_period_index
+        current_period_index = ""
+
         current_data_dict.clear()
         current_anomaly_data_dict.clear()
         reset_periods_list()
@@ -42,13 +54,14 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         colors = ["#7fc97f", "#ffb200", "#ff1f00"]
 
         if is_trained():
-            if select_observation_for_anomaly_combo_box.currentText() == "Min temperature":
+            anomaly_text = get_anomaly_text()
+            if anomaly_text == "min":
                 current_anomaly_value = current_anomaly_data_dict[key]["min"][1]
                 new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
-            elif select_observation_for_anomaly_combo_box.currentText() == "Max temperature":
+            elif anomaly_text == "max":
                 current_anomaly_value = current_anomaly_data_dict[key]["max"][1]
                 new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
-            elif select_observation_for_anomaly_combo_box.currentText() == "Average temperature":
+            elif anomaly_text == "average":
                 current_anomaly_value = current_anomaly_data_dict[key]["average"][1]
                 new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
 
@@ -271,10 +284,11 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         if not need_min_temperature and not need_max_temperature and not need_average_temperature:
             return
 
-        if current_period_index == "(None)":
+        if current_period_index == "(None)" or current_period_index == "":
             return
 
         current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
+                        current_anomaly_data_dict[current_period_index], get_anomaly_text(),
                         need_min_temperature, need_max_temperature, need_average_temperature)
 
         if current_period_type_index == 1:
@@ -294,6 +308,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         current_period_type_index = index
 
         reset_periods()
+        remove_diagrams(diagram_vertical_layout)
 
         if index <= 0:
             return
@@ -321,6 +336,8 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
 
     def update_periods_list_colors():
         fill_periods_list()
+
+        update_diagram()
 
     select_period_type_combo_box.currentIndexChanged.connect(on_period_type_combo_box_index_changed)
     periods_list_widget.clicked.connect(on_periods_list_index_changed)
