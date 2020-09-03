@@ -50,7 +50,8 @@ def gui_init_diagrams(ui: Ui_main_window,
     is_updating_station_id_combo_box = False
 
     def get_station_id() -> str:
-        return select_station_id_for_diagram_combo_box.currentText()
+        text = select_station_id_for_diagram_combo_box.currentText()
+        return text[:text.find(" ")]
 
     def is_valid_station_id() -> bool:
         station_id = get_station_id()
@@ -67,7 +68,11 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         i = 1
         for key in stations_info:
-            select_station_id_for_diagram_combo_box.addItem(key)
+            if "name" in stations_info[key]:
+                text = key + " \"" + stations_info[key]["name"] + "\""
+            else:
+                text = key
+            select_station_id_for_diagram_combo_box.addItem(text)
 
             if is_busy_by(key, is_diagram=True):
                 select_station_id_for_diagram_combo_box.model().item(i).setEnabled(False)
@@ -267,6 +272,12 @@ def gui_init_diagrams(ui: Ui_main_window,
     def get_anomaly_data() -> dict:
         return anomaly_data
 
+    def get_station_name() -> str:
+        if is_valid_station_id():
+            if "name" in stations_info[get_station_id()]:
+                return stations_info[get_station_id()]["name"]
+        return ""
+
     def get_trained_on() -> (bool, bool, bool):
         return trained_on
 
@@ -313,6 +324,7 @@ def gui_init_diagrams(ui: Ui_main_window,
         main_window,
         get_data,
         get_anomaly_data,
+        get_station_name,
         is_trained_model,
         get_trained_on,
         need_show_min,

@@ -262,6 +262,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
                                      data: Any,
                                      anomaly_data: dict,
                                      anomaly_text: str,
+                                     title: str,
                                      get_points:
                                      Callable[[Any, Callable[[list, float], Tuple[list, list]]], Tuple[list, list]],
                                      get_days: Callable[[Any], list],
@@ -318,6 +319,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
 
         size += 1
 
+    figure_canvas.axes.set_title(title)
     figure_canvas.axes.set_ylabel('temperature', color='tab:blue')
     figure_canvas.axes.set_xlabel('days')
     min_observation = 1000
@@ -352,10 +354,11 @@ def show_diagram_by_month(main_window: QtWidgets.QMainWindow,
                           data: list,
                           anomaly_data: dict,
                           anomaly_text: str,
+                          title: str,
                           need_min_temperature=False,
                           need_max_temperature=False,
                           need_average_temperature=False) -> None:
-    _show_diagram_by_points_function(main_window, vertical_layout, data, anomaly_data, anomaly_text,
+    _show_diagram_by_points_function(main_window, vertical_layout, data, anomaly_data, anomaly_text, title,
                                      _get_points_by_month,
                                      _get_days_by_month,
                                      _get_anomaly_points_by_month,
@@ -369,10 +372,11 @@ def show_diagram_by_several_months(main_window: QtWidgets.QMainWindow,
                                    data: dict,
                                    anomaly_data: dict,
                                    anomaly_text: str,
+                                   title: str,
                                    need_min_temperature=False,
                                    need_max_temperature=False,
                                    need_average_temperature=False) -> None:
-    _show_diagram_by_points_function(main_window, vertical_layout, data, anomaly_data, anomaly_text,
+    _show_diagram_by_points_function(main_window, vertical_layout, data, anomaly_data, anomaly_text, title,
                                      _get_points_by_several_months,
                                      _get_days_by_several_months,
                                      _get_anomaly_points_by_several_months,
@@ -386,10 +390,11 @@ def show_diagram_by_several_all_data(main_window: QtWidgets.QMainWindow,
                                      data: dict,
                                      anomaly_data: dict,
                                      anomaly_text: str,
+                                     title: str,
                                      need_min_temperature=False,
                                      need_max_temperature=False,
                                      need_average_temperature=False) -> None:
-    _show_diagram_by_points_function(main_window, vertical_layout, data, anomaly_data, anomaly_text,
+    _show_diagram_by_points_function(main_window, vertical_layout, data, anomaly_data, anomaly_text, title,
                                      _get_points_by_all_data,
                                      _get_days_by_all_data,
                                      _get_anomaly_points_by_all_data,

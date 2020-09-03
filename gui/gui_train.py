@@ -31,7 +31,8 @@ def gui_init_train(ui: Ui_main_window,
     is_training = False
 
     def get_station_id() -> str:
-        return select_station_id_for_training_combo_box.currentText()
+        text = select_station_id_for_training_combo_box.currentText()
+        return text[:text.find(" ")]
 
     def update_enabled_train_button() -> None:
         if is_training:
@@ -80,7 +81,11 @@ def gui_init_train(ui: Ui_main_window,
         select_station_id_for_training_combo_box.addItem("(None)")
 
         for key in stations_info:
-            select_station_id_for_training_combo_box.addItem(key)
+            if "name" in stations_info[key]:
+                text = key + " \"" + stations_info[key]["name"] + "\""
+            else:
+                text = key
+            select_station_id_for_training_combo_box.addItem(text)
 
         if index < len(select_station_id_for_training_combo_box):
             select_station_id_for_training_combo_box.setCurrentIndex(index)

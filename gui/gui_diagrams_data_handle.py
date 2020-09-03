@@ -13,6 +13,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
                                   main_window: QtWidgets.QMainWindow,
                                   get_data: Callable[[], dict],
                                   get_anomaly_data: Callable[[], dict],
+                                  get_station_name: Callable[[], str],
                                   is_trained: Callable[[], bool],
                                   get_trained_on: Callable[[], Tuple[bool, bool, bool]],
                                   need_show_min: Callable[[], bool],
@@ -291,12 +292,12 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
             return
 
         current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
-                        {}, get_anomaly_text(),
+                        {}, get_anomaly_text(), get_station_name(),
                         need_min_temperature, need_max_temperature, need_average_temperature)
 
         if is_trained():
             current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
-                            current_anomaly_data_dict[current_period_index], get_anomaly_text(),
+                            current_anomaly_data_dict[current_period_index], get_anomaly_text(), get_station_name(),
                             need_min_temperature, need_max_temperature, need_average_temperature)
 
         if current_period_type_index == 1:
@@ -347,6 +348,7 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         set_show_max(is_max_checked)
         set_show_average(is_average_checked)
 
+    # noinspection PyUnusedLocal
     def on_observation_for_anomaly_index_changed(index: int):
         fill_periods_list()
 
