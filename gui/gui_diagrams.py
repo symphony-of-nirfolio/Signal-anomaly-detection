@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QMessageBox
 
 from gui.custom_data_window import Ui_custom_data_window
 from gui.gui_available_observaion import set_observation, reset_observation
+from gui.gui_custom_data import gui_init_custom_data
 from gui.gui_diagrams_data_handle import gui_init_diagrams_data_handle
 from gui.main_window import Ui_main_window
 from gui.window_with_close_listener import WindowWithCloseListener
@@ -41,6 +42,7 @@ def gui_init_diagrams(ui: Ui_main_window,
 
     custom_data_window = None
     custom_data_ui = None
+    custom_data_observation_for_anomaly_combo_box = None
 
     # noinspection PyUnusedLocal
     is_custom_data_window_open = False
@@ -49,6 +51,10 @@ def gui_init_diagrams(ui: Ui_main_window,
 
     def get_station_id() -> str:
         return select_station_id_for_diagram_combo_box.currentText()
+
+    def is_valid_station_id() -> bool:
+        station_id = get_station_id()
+        return station_id != "(None)" and station_id != ""
 
     def update_station_id_combo_box() -> None:
         nonlocal is_updating_station_id_combo_box
@@ -89,6 +95,25 @@ def gui_init_diagrams(ui: Ui_main_window,
         select_diagram_observations_group_box.setEnabled(True)
         periods_list_widget.setEnabled(True)
 
+    def clean_anomaly_observation(combo_box: QtWidgets.QComboBox) -> None:
+        combo_box.clear()
+        combo_box.addItem("(None)")
+
+    def reset_anomaly_observation(station_id: str, combo_box: QtWidgets.QComboBox) -> None:
+        clean_anomaly_observation(combo_box)
+
+        if stations_info[station_id]["is_trained"]:
+            combo_box.setEnabled(True)
+
+            if stations_info[station_id]["is_max_trained"]:
+                combo_box.addItem("Max temperature")
+            if stations_info[station_id]["is_average_trained"]:
+                combo_box.addItem("Average temperature")
+            if stations_info[station_id]["is_min_trained"]:
+                combo_box.addItem("Min temperature")
+        else:
+            combo_box.setEnabled(False)
+
     def on_load_started() -> None:
         lock_components()
 
@@ -109,7 +134,7 @@ def gui_init_diagrams(ui: Ui_main_window,
                     loaded_anomaly_data: dict,
                     loaded_is_trained: bool,
                     loaded_trained_on: (bool, bool, bool)) -> None:
-        nonlocal data, anomaly_data, is_trained, trained_on,\
+        nonlocal data, anomaly_data, is_trained, trained_on, \
             min_temperature_combo_box, max_temperature_combo_box, average_temperature_combo_box
         data = loaded_data
         anomaly_data = loaded_anomaly_data
@@ -131,20 +156,16 @@ def gui_init_diagrams(ui: Ui_main_window,
                 stations_info[station_id]["need_max"],
                 stations_info[station_id]["need_average"])
 
-        select_observation_for_anomaly_combo_box.clear()
-        select_observation_for_anomaly_combo_box.addItem("(None)")
-
-        if stations_info[station_id]["is_trained"]:
-            select_observation_for_anomaly_combo_box.setEnabled(True)
-
-            if stations_info[station_id]["is_max_trained"]:
-                select_observation_for_anomaly_combo_box.addItem("Max temperature")
-            if stations_info[station_id]["is_average_trained"]:
-                select_observation_for_anomaly_combo_box.addItem("Average temperature")
-            if stations_info[station_id]["is_min_trained"]:
-                select_observation_for_anomaly_combo_box.addItem("Min temperature")
-        else:
-            select_observation_for_anomaly_combo_box.setEnabled(False)
+        reset_anomaly_observation(station_id, select_observation_for_anomaly_combo_box)
+        if is_custom_data_window_open:
+            # noinspection PyTypeChecker
+            reset_anomaly_observation(station_id, custom_data_observation_for_anomaly_combo_box)
+            if stations_info[station_id]["is_trained"]:
+                # noinspection PyUnresolvedReferences
+                custom_data_window.setEnabled(True)
+            else:
+                # noinspection PyUnresolvedReferences
+                custom_data_window.setEnabled(False)
 
     def on_error_to_event_list(message: str) -> None:
         event_list.append(lambda: on_error(message))
@@ -186,6 +207,13 @@ def gui_init_diagrams(ui: Ui_main_window,
             reset_observation(select_diagram_observation_vertical_layout)
             set_busy_by("", is_diagram=True)
             last_station_id = ""
+            clean_anomaly_observation(select_observation_for_anomaly_combo_box)
+            select_observation_for_anomaly_combo_box.setEnabled(False)
+            if is_custom_data_window_open:
+                # noinspection PyTypeChecker
+                clean_anomaly_observation(custom_data_observation_for_anomaly_combo_box)
+                # noinspection PyUnresolvedReferences
+                custom_data_window.setEnabled(False)
         else:
             station_id = get_station_id()
             if station_id != last_station_id:
@@ -194,16 +222,23 @@ def gui_init_diagrams(ui: Ui_main_window,
                 last_station_id = station_id
 
     def on_custom_data_window_closed():
-        nonlocal is_custom_data_window_open
+        nonlocal is_custom_data_window_open, custom_data_observation_for_anomaly_combo_box
         is_custom_data_window_open = False
+        custom_data_observation_for_anomaly_combo_box = None
 
         custom_data_push_button.setEnabled(True)
 
     def on_custom_data_push_button_clicked():
-        nonlocal custom_data_window, custom_data_ui, is_custom_data_window_open
+        nonlocal custom_data_window, custom_data_ui, is_custom_data_window_open,\
+            custom_data_observation_for_anomaly_combo_box
         custom_data_window = WindowWithCloseListener(on_custom_data_window_closed)
         custom_data_ui = Ui_custom_data_window()
         custom_data_ui.setupUi(custom_data_window)
+
+        custom_data_observation_for_anomaly_combo_box = gui_init_custom_data(custom_data_ui, custom_data_window)
+        if is_valid_station_id():
+            reset_anomaly_observation(get_station_id(), custom_data_observation_for_anomaly_combo_box)
+
         custom_data_window.show()
 
         is_custom_data_window_open = True

@@ -136,6 +136,39 @@ def _convert_to_data(json_data: dict) -> dict:
     return data
 
 
+def _get_value_list_from_data(data: list, anomaly_text: str) -> np.array:
+    value_list = []
+
+    for info in data:
+        if anomaly_text == "min":
+            value_list.append(info.min)
+        if anomaly_text == "max":
+            value_list.append(info.max)
+        if anomaly_text == "average":
+            value_list.append(info.average)
+
+    return np.array(value_list)
+
+
+def get_anomaly_from_data(data: list, anomaly_text: str, season: int) -> dict:
+    anomaly_data = {}
+    prediction = Prediction.get_instance()
+
+    col_index = 0
+    if anomaly_text == "min":
+        col_index = 0
+    if anomaly_text == "max":
+        col_index = 1
+    if anomaly_text == "average":
+        col_index = 2
+
+    value_list = _get_value_list_from_data(data, anomaly_text)
+    anomaly_array, zone = prediction.get_result(value_list, col_index, season)
+    anomaly_data[anomaly_text] = (anomaly_array.tolist(), zone)
+
+    return anomaly_data
+
+
 # noinspection PyUnusedLocal
 def get_stations_data_from_file(stations_info: dict,
                                 station_id: str,

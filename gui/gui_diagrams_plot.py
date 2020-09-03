@@ -329,6 +329,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
             max_observation = max(max_observation, max(observations[i]))
 
     delta = max_observation - min_observation
+    delta = max(1.0, delta)
 
     figure_canvas.axes.set_ylim([min_observation - delta * 0.4, max_observation + delta * 0.1])
     figure_canvas.axes.legend(labels)

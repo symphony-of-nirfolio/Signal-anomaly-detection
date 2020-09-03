@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>958</width>
-    <height>608</height>
+    <width>1005</width>
+    <height>603</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
        <widget class="QFrame" name="frame">
         <property name="minimumSize">
          <size>
-          <width>435</width>
+          <width>985</width>
           <height>100</height>
          </size>
         </property>
@@ -37,14 +37,14 @@
         <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
-        <widget class="QComboBox" name="select_observation_for_anomaly_combo_box">
+        <widget class="QComboBox" name="observation_combo_box">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="geometry">
           <rect>
-           <x>170</x>
-           <y>10</y>
+           <x>110</x>
+           <y>50</y>
            <width>261</width>
            <height>31</height>
           </rect>
@@ -64,8 +64,8 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>10</y>
-           <width>141</width>
+           <y>50</y>
+           <width>101</width>
            <height>31</height>
           </rect>
          </property>
@@ -75,17 +75,17 @@
           </font>
          </property>
          <property name="text">
-          <string>Select observation</string>
+          <string>Observation</string>
          </property>
         </widget>
-        <widget class="QComboBox" name="select_period_type_combo_box">
+        <widget class="QComboBox" name="season_type_combo_box">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="geometry">
           <rect>
-           <x>170</x>
-           <y>50</y>
+           <x>110</x>
+           <y>10</y>
            <width>261</width>
            <height>31</height>
           </rect>
@@ -94,6 +94,9 @@
           <font>
            <pointsize>12</pointsize>
           </font>
+         </property>
+         <property name="acceptDrops">
+          <bool>false</bool>
          </property>
          <item>
           <property name="text">
@@ -125,8 +128,8 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>50</y>
-           <width>141</width>
+           <y>10</y>
+           <width>101</width>
            <height>31</height>
           </rect>
          </property>
@@ -136,79 +139,232 @@
           </font>
          </property>
          <property name="text">
-          <string>Select season</string>
+          <string>Season</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="data_size_spin_box">
+         <property name="geometry">
+          <rect>
+           <x>500</x>
+           <y>10</y>
+           <width>71</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="minimum">
+          <number>28</number>
+         </property>
+         <property name="maximum">
+          <number>31</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="select_period_type_label_3">
+         <property name="geometry">
+          <rect>
+           <x>380</x>
+           <y>10</y>
+           <width>121</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Data size</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="default_value_double_spin_box">
+         <property name="geometry">
+          <rect>
+           <x>500</x>
+           <y>50</y>
+           <width>71</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="minimum">
+          <double>-90.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>60.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QLabel" name="select_period_type_label_4">
+         <property name="geometry">
+          <rect>
+           <x>380</x>
+           <y>50</y>
+           <width>121</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Default value</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="reset_push_button">
+         <property name="geometry">
+          <rect>
+           <x>580</x>
+           <y>20</y>
+           <width>81</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Reset</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="select_period_type_label_5">
+         <property name="geometry">
+          <rect>
+           <x>680</x>
+           <y>10</y>
+           <width>91</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Max temp</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="max_temperature_double_spin_box">
+         <property name="geometry">
+          <rect>
+           <x>770</x>
+           <y>10</y>
+           <width>71</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="minimum">
+          <double>-90.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>60.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>10.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QLabel" name="select_period_type_label_6">
+         <property name="geometry">
+          <rect>
+           <x>680</x>
+           <y>50</y>
+           <width>91</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Min temp</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="min_temperature_double_spin_box">
+         <property name="geometry">
+          <rect>
+           <x>770</x>
+           <y>50</y>
+           <width>71</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="minimum">
+          <double>-90.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>60.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>-10.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="update_limits_push_button">
+         <property name="geometry">
+          <rect>
+           <x>850</x>
+           <y>20</y>
+           <width>121</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Update limits</string>
          </property>
         </widget>
        </widget>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="sliders_horizontal_layout"/>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <widget class="QDoubleSpinBox" name="doubleSpinBox">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>100</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>12</pointsize>
-             </font>
-            </property>
-            <property name="decimals">
-             <number>0</number>
-            </property>
-            <property name="minimum">
-             <double>28.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>31.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QListWidget" name="listWidget">
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <layout class="QVBoxLayout" name="diagram_vertical_layout"/>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <widget class="QWidget" name="widget" native="true">
-            <property name="minimumSize">
-             <size>
-              <width>300</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>0</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" name="diagram_vertical_layout"/>
-          </item>
-         </layout>
+         <widget class="QWidget" name="widget" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>0</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
