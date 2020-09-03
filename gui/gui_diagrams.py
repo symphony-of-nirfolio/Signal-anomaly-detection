@@ -97,6 +97,9 @@ def gui_init_diagrams(ui: Ui_main_window,
 
     def on_error(message: str) -> None:
         on_load_finished()
+
+        on_status_changed("Crashed!")
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
