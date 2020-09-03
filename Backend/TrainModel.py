@@ -11,7 +11,7 @@ import numpy as np
 import shutil
 from matplotlib import pyplot as plt
 from multiprocessing import Process
-
+import concurrent
 
 _COLUMNS_NUMBER = 4
 _COLUMN_TO_STR = ('min', 'max', 'average')
@@ -73,8 +73,8 @@ def _rid_of_anomalies(data, path_to_nn, station, col, season):
     data = data[data > 0]
     plt.clf()
     res = plt.boxplot(data, vert=False)
-    min_ = min(data) - 10
-    max_ = max(data) + 10
+    min_season_value = min(data)
+    max_season_value = max(data)
     min_value = res['caps'][0].get_data()[0][0]
     max_value = res['caps'][1].get_data()[0][0]
     plt.clf()
@@ -82,17 +82,10 @@ def _rid_of_anomalies(data, path_to_nn, station, col, season):
     # plt.show()
     data = data[data >= min_value]
     data = data[data <= max_value]
-    data = np.array([(item - min_)/(max_ - min_)*2 - 1 for item in data])
+    data = np.array([(item - min_season_value)/(max_season_value - min_season_value)*2 - 1 for item in data])
     # print(min(data), max(data))
 
-    file = open(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
-    if season == 3:
-        file.write(str(season) + ',' + str(min_) + ',' + str(max_))
-    else:
-        file.write(str(season) + ',' + str(min_) + ',' + str(max_) + ',')
-    file.close()
-
-    return data
+    return data, min_season_value, max_season_value
 
 
 def _save_temp_data(path, station_id, season, column, data):
@@ -102,12 +95,20 @@ def _save_temp_data(path, station_id, season, column, data):
 def _prepare_all_data(station_id, path_to_data, columns, path_to_save):
     _create_directory_for_nn(station_id, columns, path_to_save)
 
-    for season in range(_SEASON_NUMBER):
-        for i in range(len(columns)):
-            if columns[i]:
-                data = _merge_data_for_season(season, path_to_data, i + 1)
-                data = _rid_of_anomalies(data, path_to_save, station_id, i, season)
-                _save_temp_data(path_to_save, station_id, season, i, data)
+    for col in range(len(columns)):
+        year_min = 100000
+        year_max = -100000
+        for season in range(_SEASON_NUMBER):
+            if columns[col]:
+                data = _merge_data_for_season(season, path_to_data, col + 1)
+                data, season_min, season_max = _rid_of_anomalies(data, path_to_save, station_id, col, season)
+                year_min = min(year_min, season_min)
+                year_max = max(year_max, season_max)
+                _save_temp_data(path_to_save, station_id, season, col, data)
+
+        file = open(path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
+        file.write(str(year_min-10) + ',' + str(year_max+10))
+        file.close()
 
 
 def _create_model():
@@ -170,22 +171,13 @@ def train(station_id, path_to_data, columns, path_to_save):
 
     _prepare_all_data(station_id, path_to_data, columns, path_to_save)
 
-    processes = []
-    for season in range(_SEASON_NUMBER):
-        for i in range(len(columns)):
-            if columns[i]:
-                processes.append(Process(target=_train_model_for_season,
-                                         args=(path_to_save, station_id, season, i)))
-                if len(processes) > 3:
-                    for p in processes:
-                        p.start()
-                    for p in processes:
-                        p.join()
-                    processes = []
-
-    for p in processes:
-        p.start()
-    for p in processes:
-        p.join()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        threads = []
+        for season in range(_SEASON_NUMBER):
+            for i in range(len(columns)):
+                if columns[i]:
+                    threads.append(executor.submit(_train_model_for_season,
+                                                   path_to_save, station_id, season, i))
+        concurrent.futures.wait(threads)
 
     _delete_temp_data(path_to_save, station_id, columns)

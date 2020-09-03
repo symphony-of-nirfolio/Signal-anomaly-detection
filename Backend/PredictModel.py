@@ -3,7 +3,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from Backend.CustomGenerator import SequenceGenerator
 from Backend.TrainModel import _create_model, _COLUMN_TO_STR, _SEASON_NUMBER, _COLUMNS_NUMBER
-from Backend.TrainModel import _MIN_TEMPERATURE, _MAX_TEMPERATURE
 
 import numpy as np
 
@@ -43,14 +42,13 @@ class Prediction:
             for season in range(_SEASON_NUMBER):
                 self._model[col_str][season] = self._load_nn(path_to_nn, station, col_str, season)
 
-    def _get_range(self, path_to_nn, station, col, season):
+    def _get_range(self, path_to_nn, station, col):
         data = np.fromfile(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', sep=',')
-        data = np.reshape(data, (data.shape[0]//3, 3))
-        return data[season, 1], data[season, 2]
+        return data[0], data[1]
 
-    def _prepare_data(self, data, path_to_nn, station, col, season):
+    def _prepare_data(self, data, path_to_nn, station, col):
         data = data[10000 > data]
-        min_, max_ = self._get_range(path_to_nn, station, col, season)
+        min_, max_ = self._get_range(path_to_nn, station, col)
         data = np.array([(item - min_)/(max_ - min_)*2 - 1 for item in data])
         if len(data) < 28:
             data = np.append(data, np.zeros(28-len(data)))
@@ -70,7 +68,7 @@ class Prediction:
 
     def get_result(self, data, col, season):
 
-        data_to_predict = self._prepare_data(data, self._path_to_nn, self._station, col, season)
+        data_to_predict = self._prepare_data(data, self._path_to_nn, self._station, col)
         if len(data_to_predict) == 28:
             test_generator = SequenceGenerator(np.array([0]), 1, data_to_predict, 1)
         else:
@@ -85,11 +83,11 @@ class Prediction:
             answer = (results[0, :] - data_to_predict[:28])**2
             answer = np.append(answer, (results[1, 2*28 - len(data_to_predict):] - data_to_predict[28:])**2)
 
+        color = 0
+        if max(answer) > 0.06:
+            color = 2
+        elif max(answer) > 0.03:
+            color = 1
         answer = self._shift(data, answer)
 
-        if max(answer) > 0.06:
-            return answer, 2
-        elif max(answer) > 0.03:
-            return answer, 1
-        else:
-            return answer, 0
+        return answer, color
