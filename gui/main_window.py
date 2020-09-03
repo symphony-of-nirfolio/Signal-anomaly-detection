@@ -240,6 +240,12 @@ class Ui_main_window(object):
         font.setPointSize(12)
         self.load_status_text_label.setFont(font)
         self.load_status_text_label.setObjectName("load_status_text_label")
+        self.custom_data_push_button = QtWidgets.QPushButton(self.diagram_parameters_frame)
+        self.custom_data_push_button.setGeometry(QtCore.QRect(840, 40, 101, 41))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.custom_data_push_button.setFont(font)
+        self.custom_data_push_button.setObjectName("custom_data_push_button")
         self.diagram_and_parameters_vertical_layout.addWidget(self.diagram_parameters_frame)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
@@ -323,6 +329,7 @@ class Ui_main_window(object):
         self.select_observation_for_anomaly_combo_box.setItemText(0, _translate("main_window", "(None)"))
         self.select_period_type_label_2.setText(_translate("main_window", "Select observation for anomaly"))
         self.load_status_text_label.setText(_translate("main_window", "Load status:"))
+        self.custom_data_push_button.setText(_translate("main_window", "Custom data"))
         self.label.setText(_translate("main_window", "Periods"))
 
 

@@ -644,6 +644,24 @@
             <string>Load status:</string>
            </property>
           </widget>
+          <widget class="QPushButton" name="custom_data_push_button">
+           <property name="geometry">
+            <rect>
+             <x>840</x>
+             <y>40</y>
+             <width>101</width>
+             <height>41</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Custom data</string>
+           </property>
+          </widget>
          </widget>
         </item>
         <item>

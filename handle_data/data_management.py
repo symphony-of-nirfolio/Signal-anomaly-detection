@@ -173,6 +173,7 @@ def get_stations_data_from_file(stations_info: dict,
     is_trained = False
     trained_on = (False, False, False)
     if stations_info[station_id]["is_trained"]:
+        prediction.setup_model(model_path, station_id)
         is_trained = True
         need_to_load_anomaly_data = True
         trained_on = (stations_info[station_id]["is_min_trained"],
@@ -191,9 +192,6 @@ def get_stations_data_from_file(stations_info: dict,
         need_to_load_anomaly_data = False
 
     if need_to_load_data or need_to_load_anomaly_data:
-        if stations_info[station_id]["is_trained"]:
-            prediction.setup_model(model_path, station_id)
-
         for year in range(min_year, max_year):
             for month in range(min_month, max_month):
                 key = "{}_{:02d}".format(year, month)

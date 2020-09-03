@@ -4,9 +4,11 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtWidgets import QMessageBox
 
+from gui.custom_data_window import Ui_custom_data_window
 from gui.gui_available_observaion import set_observation, reset_observation
 from gui.gui_diagrams_data_handle import gui_init_diagrams_data_handle
 from gui.main_window import Ui_main_window
+from gui.window_with_close_listener import WindowWithCloseListener
 from gui.worker import Worker
 from handle_data.data_management import get_stations_data_from_file
 
@@ -25,6 +27,7 @@ def gui_init_diagrams(ui: Ui_main_window,
     select_observation_for_anomaly_combo_box = ui.select_observation_for_anomaly_combo_box
     periods_list_widget = ui.periods_list_widget
     load_status_value_label = ui.load_status_value_label
+    custom_data_push_button = ui.custom_data_push_button
 
     data = {}
     anomaly_data = {}
@@ -35,6 +38,12 @@ def gui_init_diagrams(ui: Ui_main_window,
     min_temperature_combo_box = None
     max_temperature_combo_box = None
     average_temperature_combo_box = None
+
+    custom_data_window = None
+    custom_data_ui = None
+
+    # noinspection PyUnusedLocal
+    is_custom_data_window_open = False
 
     is_updating_station_id_combo_box = False
 
@@ -181,6 +190,25 @@ def gui_init_diagrams(ui: Ui_main_window,
                 load(station_id)
                 last_station_id = station_id
 
+    def on_custom_data_window_closed():
+        nonlocal is_custom_data_window_open
+        is_custom_data_window_open = False
+
+        custom_data_push_button.setEnabled(True)
+
+    def on_custom_data_push_button_clicked():
+        nonlocal custom_data_window, custom_data_ui, is_custom_data_window_open
+        custom_data_window = WindowWithCloseListener(on_custom_data_window_closed)
+        custom_data_ui = Ui_custom_data_window()
+        custom_data_ui.setupUi(custom_data_window)
+        custom_data_window.show()
+
+        is_custom_data_window_open = True
+        custom_data_push_button.setEnabled(False)
+
+        if not is_trained:
+            custom_data_window.setEnabled(False)
+
     def on_extract_finished() -> None:
         update_station_id_combo_box()
 
@@ -235,6 +263,7 @@ def gui_init_diagrams(ui: Ui_main_window,
     update_station_id_combo_box()
 
     select_station_id_for_diagram_combo_box.currentIndexChanged.connect(on_station_id_combo_box_selected)
+    custom_data_push_button.clicked.connect(on_custom_data_push_button_clicked)
 
     update_diagram = gui_init_diagrams_data_handle(
         ui,
