@@ -265,8 +265,17 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
 
     figure_canvas.axes.set_ylabel('temperature', color='tab:blue')
     figure_canvas.axes.set_xlabel('days')
+    min_observation = 1000
+    max_observation = -1000
     for i in range(size):
         figure_canvas.axes.plot(days[i], observations[i], colors[i])
+        if len(observations[i]) > 0:
+            min_observation = min(min_observation, min(observations[i]))
+            max_observation = max(max_observation, max(observations[i]))
+
+    delta = max_observation - min_observation
+
+    figure_canvas.axes.set_ylim([min_observation - delta * 0.4, max_observation + delta * 0.1])
     figure_canvas.axes.legend(labels)
 
     if anomaly_text != 'none':
@@ -279,7 +288,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
         anomaly_axes = figure_canvas.axes.twinx()
         anomaly_axes.set_ylabel('anomaly', color='tab:red')
         anomaly_axes.plot(anomaly_days, anomaly_observations, 'r')
-        anomaly_axes.set_ylim([0.0, 4.0])
+        anomaly_axes.set_ylim([0.0, 0.2])
 
 
 def show_diagram_by_month(main_window: QtWidgets.QMainWindow,
