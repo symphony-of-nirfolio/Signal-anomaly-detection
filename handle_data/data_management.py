@@ -13,6 +13,7 @@ common_path = "data"
 stations_info_path = common_path + "/common_data.json"
 
 stations_data_path = common_path + "/stations"
+model_data_path = common_path + "/models"
 
 
 def init_files_and_directories_if_not_exist() -> None:
@@ -48,12 +49,12 @@ def create_directory_for_station(station_id: str) -> str:
     return path
 
 
-def get_directory_path_for_trained_model(station_id: str) -> str:
-    return stations_data_path + "/" + station_id + "/model"
+def get_directory_path_for_trained_model() -> str:
+    return model_data_path
 
 
-def create_directory_for_trained_model(station_id: str) -> str:
-    path = get_directory_path_for_trained_model(station_id)
+def create_directory_for_trained_model() -> str:
+    path = get_directory_path_for_trained_model()
     if not os.path.exists(path):
         os.makedirs(path)
     return path
@@ -135,6 +136,39 @@ def _convert_to_data(json_data: dict) -> dict:
     return data
 
 
+def _get_value_list_from_data(data: list, anomaly_text: str) -> np.array:
+    value_list = []
+
+    for info in data:
+        if anomaly_text == "min":
+            value_list.append(info.min)
+        if anomaly_text == "max":
+            value_list.append(info.max)
+        if anomaly_text == "average":
+            value_list.append(info.average)
+
+    return np.array(value_list)
+
+
+def get_anomaly_from_data(data: list, anomaly_text: str, season: int) -> dict:
+    anomaly_data = {}
+    prediction = Prediction.get_instance()
+
+    col_index = 0
+    if anomaly_text == "min":
+        col_index = 0
+    if anomaly_text == "max":
+        col_index = 1
+    if anomaly_text == "average":
+        col_index = 2
+
+    value_list = _get_value_list_from_data(data, anomaly_text)
+    anomaly_array, zone = prediction.get_result(value_list, col_index, season)
+    anomaly_data[anomaly_text] = (anomaly_array.tolist(), zone)
+
+    return anomaly_data
+
+
 # noinspection PyUnusedLocal
 def get_stations_data_from_file(stations_info: dict,
                                 station_id: str,
@@ -143,7 +177,7 @@ def get_stations_data_from_file(stations_info: dict,
                                 on_finished:
                                 Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> (dict, dict):
     data_path = get_directory_path_for_station_data(station_id)
-    model_path = get_directory_path_for_trained_model(station_id)
+    model_path = get_directory_path_for_trained_model()
 
     is_loading = True
     current_index = 0
@@ -173,6 +207,7 @@ def get_stations_data_from_file(stations_info: dict,
     is_trained = False
     trained_on = (False, False, False)
     if stations_info[station_id]["is_trained"]:
+        prediction.setup_model(model_path, station_id)
         is_trained = True
         need_to_load_anomaly_data = True
         trained_on = (stations_info[station_id]["is_min_trained"],
@@ -191,9 +226,6 @@ def get_stations_data_from_file(stations_info: dict,
         need_to_load_anomaly_data = False
 
     if need_to_load_data or need_to_load_anomaly_data:
-        if stations_info[station_id]["is_trained"]:
-            prediction.setup_model(model_path, station_id)
-
         for year in range(min_year, max_year):
             for month in range(min_month, max_month):
                 key = "{}_{:02d}".format(year, month)

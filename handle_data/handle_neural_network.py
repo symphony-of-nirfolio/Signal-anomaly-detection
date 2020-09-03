@@ -15,7 +15,7 @@ def train_model(station_id: str,
                 need_max: bool,
                 need_average: bool) -> None:
     path_to_data = create_directory_for_station(station_id)
-    path_to_save = create_directory_for_trained_model(station_id)
+    path_to_save = create_directory_for_trained_model()
 
     is_training = True
     current_index = 0
