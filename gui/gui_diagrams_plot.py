@@ -202,6 +202,61 @@ def trim_anomaly_data(days: list, anomaly_data: list) -> (list, list):
     return new_days, new_anomaly_data
 
 
+def _add_anomaly_line_to_axes(start_day: float, end_day: float,
+                              start_observation: float, end_observation: float,
+                              axes: Any) -> None:
+    if start_day == end_day:
+        print("Bad data: start_day = end_day!")
+        return
+
+    # y = k * x + c
+    k = (end_observation - start_observation) / (end_day - start_day)
+    c = end_observation - k * end_day
+
+    def get_x(y: float):
+        return (y - c) / k
+
+    def try_add_zone_to_axes(zone_x: Tuple[float, float], zone_y: Tuple[float, float], color: str, linewidth: int):
+        if zone_x[1] < start_day:
+            return
+        if zone_x[0] > end_day:
+            return
+
+        if zone_x[1] < end_day:
+            end_point = (zone_x[1], zone_y[1])
+        else:
+            end_point = (end_day, end_observation)
+
+        if zone_x[0] > start_day:
+            start_point = (zone_x[0], zone_y[0])
+        else:
+            start_point = (start_day, start_observation)
+
+        axes.plot([start_point[0], end_point[0]], [start_point[1], end_point[1]], color, linewidth=linewidth)
+
+    red_zone_y = (0.06, 100.0) if k > 0.0 else (100.0, 0.06)
+    yellow_zone_y = (0.03, 0.06) if k > 0.0 else (0.06, 0.03)
+    green_zone_y = (-0.001, 0.03) if k > 0.0 else (0.03, -0.001)
+
+    red_zone_x = (get_x(red_zone_y[0]), get_x(red_zone_y[1]))
+    yellow_zone_x = (get_x(yellow_zone_y[0]), get_x(yellow_zone_y[1]))
+    green_zone_x = (get_x(green_zone_y[0]), get_x(green_zone_y[1]))
+
+    try_add_zone_to_axes(green_zone_x, green_zone_y, 'g', 2)
+    try_add_zone_to_axes(yellow_zone_x, yellow_zone_y, 'orange', 2)
+    try_add_zone_to_axes(red_zone_x, red_zone_y, 'r', 2)
+
+
+def _add_anomaly_to_axes(anomaly_days: list, anomaly_observations: list, axes: Any) -> None:
+    if len(anomaly_days) == 0:
+        return
+
+    for i in range(1, len(anomaly_days)):
+        _add_anomaly_line_to_axes(anomaly_days[i - 1], anomaly_days[i],
+                                  anomaly_observations[i - 1], anomaly_observations[i],
+                                  axes)
+
+
 def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
                                      vertical_layout: QtWidgets.QVBoxLayout,
                                      data: Any,
@@ -287,7 +342,7 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
 
         anomaly_axes = figure_canvas.axes.twinx()
         anomaly_axes.set_ylabel('anomaly', color='tab:red')
-        anomaly_axes.plot(anomaly_days, anomaly_observations, 'r')
+        _add_anomaly_to_axes(anomaly_days, anomaly_observations, anomaly_axes)
         anomaly_axes.set_ylim([0.0, 0.2])
 
 
