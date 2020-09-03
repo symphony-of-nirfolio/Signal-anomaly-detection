@@ -13,6 +13,7 @@ common_path = "data"
 stations_info_path = common_path + "/common_data.json"
 
 stations_data_path = common_path + "/stations"
+model_data_path = common_path + "/models"
 
 
 def init_files_and_directories_if_not_exist() -> None:
@@ -48,12 +49,12 @@ def create_directory_for_station(station_id: str) -> str:
     return path
 
 
-def get_directory_path_for_trained_model(station_id: str) -> str:
-    return stations_data_path + "/" + station_id + "/model"
+def get_directory_path_for_trained_model() -> str:
+    return model_data_path
 
 
-def create_directory_for_trained_model(station_id: str) -> str:
-    path = get_directory_path_for_trained_model(station_id)
+def create_directory_for_trained_model() -> str:
+    path = get_directory_path_for_trained_model()
     if not os.path.exists(path):
         os.makedirs(path)
     return path
@@ -143,7 +144,7 @@ def get_stations_data_from_file(stations_info: dict,
                                 on_finished:
                                 Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> (dict, dict):
     data_path = get_directory_path_for_station_data(station_id)
-    model_path = get_directory_path_for_trained_model(station_id)
+    model_path = get_directory_path_for_trained_model()
 
     is_loading = True
     current_index = 0
