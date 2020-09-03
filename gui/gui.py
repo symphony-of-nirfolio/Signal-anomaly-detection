@@ -7,12 +7,19 @@ from gui.gui_data_extraction import gui_init_data_extraction
 from gui.gui_diagrams import gui_init_diagrams
 from gui.gui_train import gui_init_train
 from gui.main_window import Ui_main_window
+from gui.window_with_close_listener import WindowWithCloseListener
 from handle_data.data_management import get_stations_info_from_json, init_files_and_directories_if_not_exist
 
 
 def main_ui() -> None:
     app = QtWidgets.QApplication(sys.argv)
-    main_window = QtWidgets.QMainWindow()
+
+    close_listeners = []
+
+    def run_listeners():
+        [listener() for listener in close_listeners]
+
+    main_window = WindowWithCloseListener(run_listeners)
 
     ui = Ui_main_window()
     ui.setupUi(main_window)
@@ -76,7 +83,7 @@ def main_ui() -> None:
     busy_listeners.append(busy_listener_by_train)
     on_extract_finished.append(on_extract_finished_for_train)
 
-    busy_listener_by_diagrams, on_extract_finished_for_diagrams =\
+    busy_listener_by_diagrams, on_extract_finished_for_diagrams, close_listener =\
         gui_init_diagrams(
             ui,
             main_window,
@@ -88,6 +95,7 @@ def main_ui() -> None:
 
     busy_listeners.append(busy_listener_by_diagrams)
     on_extract_finished.append(on_extract_finished_for_diagrams)
+    close_listeners.append(close_listener)
 
     busy_listener_by_data_extract =\
         gui_init_data_extraction(

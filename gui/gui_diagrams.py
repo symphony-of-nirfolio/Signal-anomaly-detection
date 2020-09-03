@@ -20,7 +20,7 @@ def gui_init_diagrams(ui: Ui_main_window,
                       thread_pool: QThreadPool,
                       stations_info: dict,
                       set_busy_by: Callable[..., None],
-                      is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None]):
+                      is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None], Callable[[], None]):
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observations_group_box = ui.select_diagram_observations_group_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
@@ -247,6 +247,11 @@ def gui_init_diagrams(ui: Ui_main_window,
         if not is_trained:
             custom_data_window.setEnabled(False)
 
+    def close_listener() -> None:
+        if is_custom_data_window_open:
+            # noinspection PyUnresolvedReferences
+            custom_data_window.close()
+
     def on_extract_finished() -> None:
         update_station_id_combo_box()
 
@@ -317,4 +322,4 @@ def gui_init_diagrams(ui: Ui_main_window,
         set_show_max,
         set_show_average)
 
-    return busy_listener, on_extract_finished
+    return busy_listener, on_extract_finished, close_listener
