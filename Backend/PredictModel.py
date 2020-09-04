@@ -42,13 +42,14 @@ class Prediction:
             for season in range(_SEASON_NUMBER):
                 self._model[col_str][season] = self._load_nn(path_to_nn, station, col_str, season)
 
-    def _get_range(self, path_to_nn, station, col):
+    def _get_range(self, path_to_nn, station, col, season):
         data = np.fromfile(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', sep=',')
-        return data[0], data[1]
+        data = np.reshape(data, (data.shape[0] // 3, 3))
+        return data[season, 1], data[season, 2]
 
-    def _prepare_data(self, data, path_to_nn, station, col):
+    def _prepare_data(self, data, path_to_nn, station, col, season):
         data = data[10000 > data]
-        min_, max_ = self._get_range(path_to_nn, station, col)
+        min_, max_ = self._get_range(path_to_nn, station, col, season)
         data = np.array([(item - min_)/(max_ - min_)*2 - 1 for item in data])
         if len(data) < 28:
             data = np.append(data, np.zeros(28-len(data)))
@@ -68,7 +69,7 @@ class Prediction:
 
     def get_result(self, data, col, season):
 
-        data_to_predict = self._prepare_data(data, self._path_to_nn, self._station, col)
+        data_to_predict = self._prepare_data(data, self._path_to_nn, self._station, col, season)
         if len(data_to_predict) == 28:
             test_generator = SequenceGenerator(np.array([0]), 1, data_to_predict, 1)
         else:
