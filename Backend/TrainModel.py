@@ -1,7 +1,7 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D
+from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D, Flatten, Dropout
 from keras.models import Model, Sequential
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from Backend.CustomGenerator import SequenceGenerator
@@ -47,27 +47,6 @@ def _create_directory_for_nn(station_id, columns, path_to_save):
             os.mkdir(temp_path)
 
 
-def _read_from_file(file_name, values_len):
-    try:
-        data = np.fromfile(file_name, sep=',')
-        return np.reshape(data, (data.shape[0] // values_len, values_len))
-    except:
-        return np.array([])
-
-
-def _merge_data_for_season(season, path_to_data, column):
-    merged_data = np.empty(0)
-    months = _SEASON_TO_MONTHS[season]
-    for year in range(_MIN_YEAR, _MAX_YEAR, 1):
-        for month in months:
-            month_file = path_to_data + '/' + str(year) + '_' + month
-            cur_data = _read_from_file(month_file, _COLUMNS_NUMBER)
-            if not cur_data.shape[0] == 0:
-                merged_data = np.append(merged_data, cur_data[:, column])
-
-    return merged_data
-
-
 def _merge_data_for_season_json(season, all_data, column):
     merged_data = np.empty(0)
 
@@ -87,8 +66,8 @@ def _rid_of_anomalies(data, path_to_nn, station, col, season):
     data = data[data > 0]
     plt.clf()
     res = plt.boxplot(data, vert=False)
-    min_season_value = min(data)
-    max_season_value = max(data)
+    min_season_value = min(data)-1
+    max_season_value = max(data)+1
     min_value = res['caps'][0].get_data()[0][0]
     max_value = res['caps'][1].get_data()[0][0]
     plt.clf()
@@ -99,30 +78,18 @@ def _rid_of_anomalies(data, path_to_nn, station, col, season):
     data = np.array([(item - min_season_value)/(max_season_value - min_season_value)*2 - 1 for item in data])
     # print(min(data), max(data))
 
-    return data, min_season_value, max_season_value
+    file = open(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
+    if season == 3:
+        file.write(str(season) + ',' + str(min_season_value) + ',' + str(max_season_value))
+    else:
+        file.write(str(season) + ',' + str(min_season_value) + ',' + str(max_season_value) + ',')
+    file.close()
+
+    return data
 
 
 def _save_temp_data(path, station_id, season, column, data):
     data.tofile(path + '/' + station_id + '/' + str(season) + '_' + str(column) + '.dat', sep=',')
-
-
-def _prepare_all_data_multiple_files(station_id, path_to_data, columns, path_to_save):
-    _create_directory_for_nn(station_id, columns, path_to_save)
-
-    for col in range(len(columns)):
-        year_min = 100000
-        year_max = -100000
-        for season in range(_SEASON_NUMBER):
-            if columns[col]:
-                data = _merge_data_for_season(season, path_to_data, col + 1)
-                data, season_min, season_max = _rid_of_anomalies(data, path_to_save, station_id, col, season)
-                year_min = min(year_min, season_min)
-                year_max = max(year_max, season_max)
-                _save_temp_data(path_to_save, station_id, season, col, data)
-
-        file = open(path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
-        file.write(str(year_min-10) + ',' + str(year_max+10))
-        file.close()
 
 
 def _read_json_file(path_to_data):
@@ -137,26 +104,18 @@ def _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_sav
     all_data = _read_json_file(path_to_data)
     for col in range(len(columns)):
         if columns[col]:
-            year_min = 100000
-            year_max = -100000
             for season in range(_SEASON_NUMBER):
                 data = _merge_data_for_season_json(season, all_data, col + 1)
-                data, season_min, season_max = _rid_of_anomalies(data, path_to_save, station_id, col, season)
-                year_min = min(year_min, season_min)
-                year_max = max(year_max, season_max)
+                data = _rid_of_anomalies(data, path_to_save, station_id, col, season)
                 _save_temp_data(path_to_save, station_id, season, col, data)
-
-            file = open(path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
-            file.write(str(year_min-10) + ',' + str(year_max+10))
-            file.close()
 
 
 def _create_model():
     model = Sequential()
-    model.add(Conv1D(filters=4, kernel_size=5, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
-    model.add(MaxPooling1D(4))
-    model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh'))
-    model.add(GlobalMaxPool1D())
+    model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
+    model.add(MaxPooling1D(2))
+    model.add(Flatten())
+    model.add(Dense(units=10, activation='tanh'))
     model.add(Dense(units=_IN_X, activation='tanh'))
     return model
 
@@ -222,19 +181,3 @@ def train_single_file(station_id, path_to_data, columns, path_to_save):
 
     _delete_temp_data(path_to_save, station_id, columns)
 
-
-# deprecated
-def train(station_id, path_to_data, columns, path_to_save):
-
-    _prepare_all_data_multiple_files(station_id, path_to_data, columns, path_to_save)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        threads = []
-        for season in range(_SEASON_NUMBER):
-            for i in range(len(columns)):
-                if columns[i]:
-                    threads.append(executor.submit(_train_model_for_season,
-                                                   path_to_save, station_id, season, i))
-        concurrent.futures.wait(threads)
-
-    _delete_temp_data(path_to_save, station_id, columns)
