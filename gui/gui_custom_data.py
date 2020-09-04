@@ -107,7 +107,10 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
                               data,
                               anomaly_data,
                               anomaly_text,
-                              *min_max_average_tuple)
+                              "Custom Data",
+                              min_max_average_tuple[0],
+                              min_max_average_tuple[1],
+                              min_max_average_tuple[2])
 
     def reset_sliders(need_save_value: bool) -> None:
         nonlocal value_sliders, current_min_limit, current_max_limit
