@@ -22,10 +22,11 @@ def handle_data_to_files(
     end_date = "&endDate=3000-01-01"
     include_attributes = "&includeAttributes=false"
     units = "&units=metric"
+    include_station_name = "&includeStationName=true"
     output_format = "&format=json"
 
-    url = \
-        site_path + dataset + data_types + stations + start_date + end_date + include_attributes + units + output_format
+    url = site_path + dataset + data_types + stations + start_date + end_date + include_attributes + units +\
+        include_station_name + output_format
 
     on_status_changed("Extracting data from site")
 
@@ -53,6 +54,8 @@ def handle_data_to_files(
     contain_min_temperature = False
     contain_max_temperature = False
     contain_average_temperature = False
+
+    station_name = ""
 
     on_status_changed("Parsing data")
 
@@ -86,6 +89,9 @@ def handle_data_to_files(
             average_value = float(current_data['TAVG']) + 273.15
             contain_average_temperature = True
 
+        if 'NAME' in current_data:
+            station_name = current_data['NAME']
+
         info.min = min_value
         info.max = max_value
         info.average = average_value
@@ -105,6 +111,7 @@ def handle_data_to_files(
     else:
         stations_info[station_id] = {}
 
+    stations_info[station_id]["name"] = station_name
     stations_info[station_id]["need_min"] = contain_min_temperature
     stations_info[station_id]["need_max"] = contain_max_temperature
     stations_info[station_id]["need_average"] = contain_average_temperature

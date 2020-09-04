@@ -17,7 +17,9 @@ def gui_init_train(ui: Ui_main_window,
                    thread_pool: QThreadPool,
                    stations_info: dict,
                    set_busy_by: Callable[..., None],
-                   is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None]):
+                   is_busy_by: Callable[..., bool],
+                   play_finish_notification: Callable[[], None],
+                   play_error_notification: Callable[[], None]) -> (Callable[[], None], Callable[[], None]):
     select_station_id_for_training_combo_box = ui.select_station_id_for_training_combo_box
     select_training_observation_vertical_layout = ui.select_training_observation_vertical_layout
     select_training_observations_group_box = ui.select_training_observations_group_box
@@ -31,7 +33,10 @@ def gui_init_train(ui: Ui_main_window,
     is_training = False
 
     def get_station_id() -> str:
-        return select_station_id_for_training_combo_box.currentText()
+        text = select_station_id_for_training_combo_box.currentText()
+        if text == "(None)":
+            return text
+        return text[:text.find(" ")]
 
     def update_enabled_train_button() -> None:
         if is_training:
@@ -80,7 +85,11 @@ def gui_init_train(ui: Ui_main_window,
         select_station_id_for_training_combo_box.addItem("(None)")
 
         for key in stations_info:
-            select_station_id_for_training_combo_box.addItem(key)
+            if "name" in stations_info[key]:
+                text = key + " \"" + stations_info[key]["name"] + "\""
+            else:
+                text = key
+            select_station_id_for_training_combo_box.addItem(text)
 
         if index < len(select_station_id_for_training_combo_box):
             select_station_id_for_training_combo_box.setCurrentIndex(index)
@@ -132,6 +141,8 @@ def gui_init_train(ui: Ui_main_window,
 
         on_status_changed("Crashed!")
 
+        play_error_notification()
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
@@ -139,6 +150,8 @@ def gui_init_train(ui: Ui_main_window,
 
     def on_finished(need_min: bool, need_max: bool, need_average: bool) -> None:
         on_train_finished()
+
+        play_finish_notification()
 
         station_id = get_station_id()
         stations_info[station_id]["is_trained"] = True

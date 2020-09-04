@@ -20,7 +20,9 @@ def gui_init_diagrams(ui: Ui_main_window,
                       thread_pool: QThreadPool,
                       stations_info: dict,
                       set_busy_by: Callable[..., None],
-                      is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None]):
+                      is_busy_by: Callable[..., bool],
+                      play_finish_notification: Callable[[], None],
+                      play_error_notification: Callable[[], None]) -> (Callable[[], None], Callable[[], None], Callable[[], None]):
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observations_group_box = ui.select_diagram_observations_group_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
@@ -50,7 +52,10 @@ def gui_init_diagrams(ui: Ui_main_window,
     is_updating_station_id_combo_box = False
 
     def get_station_id() -> str:
-        return select_station_id_for_diagram_combo_box.currentText()
+        text = select_station_id_for_diagram_combo_box.currentText()
+        if text == "(None)":
+            return text
+        return text[:text.find(" ")]
 
     def is_valid_station_id() -> bool:
         station_id = get_station_id()
@@ -67,7 +72,11 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         i = 1
         for key in stations_info:
-            select_station_id_for_diagram_combo_box.addItem(key)
+            if "name" in stations_info[key]:
+                text = key + " \"" + stations_info[key]["name"] + "\""
+            else:
+                text = key
+            select_station_id_for_diagram_combo_box.addItem(text)
 
             if is_busy_by(key, is_diagram=True):
                 select_station_id_for_diagram_combo_box.model().item(i).setEnabled(False)
@@ -125,6 +134,8 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         on_status_changed("Crashed!")
 
+        play_error_notification()
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
@@ -140,6 +151,8 @@ def gui_init_diagrams(ui: Ui_main_window,
         anomaly_data = loaded_anomaly_data
         is_trained = loaded_is_trained
         trained_on = loaded_trained_on
+
+        play_finish_notification()
 
         on_load_finished()
 
@@ -247,6 +260,11 @@ def gui_init_diagrams(ui: Ui_main_window,
         if not is_trained:
             custom_data_window.setEnabled(False)
 
+    def close_listener() -> None:
+        if is_custom_data_window_open:
+            # noinspection PyUnresolvedReferences
+            custom_data_window.close()
+
     def on_extract_finished() -> None:
         update_station_id_combo_box()
 
@@ -261,6 +279,12 @@ def gui_init_diagrams(ui: Ui_main_window,
 
     def get_anomaly_data() -> dict:
         return anomaly_data
+
+    def get_station_name() -> str:
+        if is_valid_station_id():
+            if "name" in stations_info[get_station_id()]:
+                return stations_info[get_station_id()]["name"]
+        return ""
 
     def get_trained_on() -> (bool, bool, bool):
         return trained_on
@@ -308,6 +332,7 @@ def gui_init_diagrams(ui: Ui_main_window,
         main_window,
         get_data,
         get_anomaly_data,
+        get_station_name,
         is_trained_model,
         get_trained_on,
         need_show_min,
@@ -317,4 +342,4 @@ def gui_init_diagrams(ui: Ui_main_window,
         set_show_max,
         set_show_average)
 
-    return busy_listener, on_extract_finished
+    return busy_listener, on_extract_finished, close_listener
