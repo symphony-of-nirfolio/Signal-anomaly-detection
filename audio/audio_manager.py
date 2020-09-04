@@ -22,11 +22,9 @@ def audio_manager() -> (Callable[[], None],
 
     def play_finish_notification() -> None:
         pygame.mixer.Channel(1).play(pygame.mixer.Sound('audio/source/finish_notification.wav'))
-        print("Notify finish")
 
     def play_error_notification() -> None:
         pygame.mixer.Channel(2).play(pygame.mixer.Sound('audio/source/error_notification.wav'))
-        print("Notify error")
 
     def get_sound_effect_volume() -> float:
         return audio_info["sound_effect_volume"]

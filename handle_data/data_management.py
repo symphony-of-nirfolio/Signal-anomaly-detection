@@ -34,7 +34,6 @@ def init_files_and_directories_if_not_exist() -> None:
 def get_stations_info_from_json() -> dict:
     with open(stations_info_path) as stations_info_file:
         data = json.load(stations_info_file)
-        print(data)
         return data
 
 
@@ -46,7 +45,6 @@ def write_stations_info_to_json(stations_info: dict) -> None:
 def get_audio_info_from_json() -> dict:
     with open(audio_info_path) as audio_info_file:
         audio_info = json.load(audio_info_file)
-        print(audio_info)
         return audio_info
 
 

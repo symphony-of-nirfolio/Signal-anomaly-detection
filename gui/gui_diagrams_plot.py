@@ -340,7 +340,6 @@ def _show_diagram_by_points_function(main_window: QtWidgets.QMainWindow,
         anomaly_days, anomaly_observations = trim_anomaly_data(anomaly_days, anomaly_observations)
 
         if len(anomaly_days) != len(anomaly_observations):
-            print(len(anomaly_days), len(anomaly_observations))
             return
 
         anomaly_axes = figure_canvas.axes.twinx()
