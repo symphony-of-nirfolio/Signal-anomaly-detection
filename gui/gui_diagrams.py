@@ -2,7 +2,7 @@ from typing import Callable
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThreadPool
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QApplication
 
 from gui.custom_data_window import Ui_custom_data_window
 from gui.gui_available_observaion import set_observation, reset_observation
@@ -22,7 +22,8 @@ def gui_init_diagrams(ui: Ui_main_window,
                       set_busy_by: Callable[..., None],
                       is_busy_by: Callable[..., bool],
                       play_finish_notification: Callable[[], None],
-                      play_error_notification: Callable[[], None]) -> (Callable[[], None], Callable[[], None], Callable[[], None]):
+                      play_error_notification: Callable[[], None]) ->\
+        (Callable[[], None], Callable[[], None], Callable[[], None]):
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observations_group_box = ui.select_diagram_observations_group_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
@@ -136,6 +137,8 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         play_error_notification()
 
+        QApplication.alert(main_window)
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
@@ -155,6 +158,8 @@ def gui_init_diagrams(ui: Ui_main_window,
         play_finish_notification()
 
         on_load_finished()
+
+        QApplication.alert(main_window)
 
         select_period_type_combo_box.setCurrentIndex(0)
 
