@@ -16,7 +16,9 @@ def gui_init_data_extraction(ui: Ui_main_window,
                              stations_info: dict,
                              set_busy_by: Callable[..., None],
                              is_busy_by: Callable[..., bool],
-                             on_extract_finished: list) -> Callable[[], None]:
+                             on_extract_finished: list,
+                             play_finish_notification: Callable[[], None],
+                             play_error_notification: Callable[[], None]) -> Callable[[], None]:
     station_id_line_edit = ui.station_id_line_edit
     extract_data_push_button = ui.extract_data_push_button
     data_extraction_status_value_label = ui.data_extraction_status_value_label
@@ -82,6 +84,8 @@ def gui_init_data_extraction(ui: Ui_main_window,
 
         on_status_changed("Crashed!")
 
+        play_error_notification()
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
@@ -89,6 +93,8 @@ def gui_init_data_extraction(ui: Ui_main_window,
 
     def on_finished() -> None:
         on_extract_data_finished()
+
+        play_finish_notification()
 
         update_station_id_push_buttons()
 

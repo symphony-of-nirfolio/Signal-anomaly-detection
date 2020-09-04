@@ -20,7 +20,9 @@ def gui_init_diagrams(ui: Ui_main_window,
                       thread_pool: QThreadPool,
                       stations_info: dict,
                       set_busy_by: Callable[..., None],
-                      is_busy_by: Callable[..., bool]) -> (Callable[[], None], Callable[[], None], Callable[[], None]):
+                      is_busy_by: Callable[..., bool],
+                      play_finish_notification: Callable[[], None],
+                      play_error_notification: Callable[[], None]) -> (Callable[[], None], Callable[[], None], Callable[[], None]):
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observations_group_box = ui.select_diagram_observations_group_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
@@ -132,6 +134,8 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         on_status_changed("Crashed!")
 
+        play_error_notification()
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
@@ -147,6 +151,8 @@ def gui_init_diagrams(ui: Ui_main_window,
         anomaly_data = loaded_anomaly_data
         is_trained = loaded_is_trained
         trained_on = loaded_trained_on
+
+        play_finish_notification()
 
         on_load_finished()
 

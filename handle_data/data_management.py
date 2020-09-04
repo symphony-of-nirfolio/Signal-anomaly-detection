@@ -11,6 +11,7 @@ from handle_data.info import Info, InfoJSONEncoder
 
 common_path = "data"
 stations_info_path = common_path + "/common_data.json"
+audio_info_path = common_path + "/audio_data.json"
 
 stations_data_path = common_path + "/stations"
 model_data_path = common_path + "/models"
@@ -21,6 +22,10 @@ def init_files_and_directories_if_not_exist() -> None:
         os.mkdir(common_path)
         with open(stations_info_path, 'w') as stations_info_file:
             json.dump({}, stations_info_file)
+
+    if not os.path.exists(audio_info_path):
+        with open(audio_info_path, 'w') as audio_info_file:
+            json.dump({"sound_effect_volume": 1.0, "music_volume": 0.4}, audio_info_file)
 
     if not os.path.exists(stations_data_path):
         os.mkdir(stations_data_path)
@@ -36,6 +41,18 @@ def get_stations_info_from_json() -> dict:
 def write_stations_info_to_json(stations_info: dict) -> None:
     with open(stations_info_path, 'w') as stations_info_file:
         json.dump(stations_info, stations_info_file)
+
+
+def get_audio_info_from_json() -> dict:
+    with open(audio_info_path) as audio_info_file:
+        audio_info = json.load(audio_info_file)
+        print(audio_info)
+        return audio_info
+
+
+def write_audio_info_to_json(audio_info: dict) -> None:
+    with open(audio_info_path, 'w') as audio_info_file:
+        json.dump(audio_info, audio_info_file)
 
 
 def get_directory_path_for_station_data(station_id: str) -> str:
