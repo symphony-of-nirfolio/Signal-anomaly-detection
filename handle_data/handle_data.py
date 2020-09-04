@@ -48,9 +48,6 @@ def handle_data_to_files(
 
     data = {}
 
-    min_temperature = 10000
-    max_temperature = 0
-
     contain_min_temperature = False
     contain_max_temperature = False
     contain_average_temperature = False
@@ -75,13 +72,11 @@ def handle_data_to_files(
         min_value = 100000
         if 'TMIN' in current_data:
             min_value = float(current_data['TMIN']) + 273.15
-            min_temperature = min(min_temperature, min_value)
             contain_min_temperature = True
 
         max_value = 100000
         if 'TMAX' in current_data:
             max_value = float(current_data['TMAX']) + 273.15
-            max_temperature = max(max_temperature, max_value)
             contain_max_temperature = True
 
         average_value = 100000
@@ -120,16 +115,6 @@ def handle_data_to_files(
 
     single_file_path = create_directory_for_single_file_station_and_return_file_path(station_id)
     save_data_to_file(data, single_file_path)
-
-    print("Min of min temperatures: {}".format(min_temperature))
-    print("Max of max temperatures: {}".format(max_temperature))
-
-    print("Contain min: {}, Contain max: {}, Contain average: {}".format(
-        contain_min_temperature,
-        contain_max_temperature,
-        contain_average_temperature))
-
-    print("Finished")
 
     on_status_changed("Finished")
     on_finished()
