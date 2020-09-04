@@ -10,7 +10,7 @@ import random
 import numpy as np
 import shutil
 from matplotlib import pyplot as plt
-from multiprocessing import Process
+import json
 import concurrent
 
 _COLUMNS_NUMBER = 4
@@ -68,6 +68,20 @@ def _merge_data_for_season(season, path_to_data, column):
     return merged_data
 
 
+def _merge_data_for_season_json(season, all_data, column):
+    merged_data = np.empty(0)
+
+    months = _SEASON_TO_MONTHS[season]
+    for key in all_data:
+        if key[-2:] in months:
+            cur_data = np.array(all_data[key])
+            cur_data = np.reshape(cur_data, (cur_data.shape[0] // _COLUMNS_NUMBER, _COLUMNS_NUMBER))
+            if not cur_data.shape[0] == 0:
+                merged_data = np.append(merged_data, cur_data[:, column])
+
+    return merged_data
+
+
 def _rid_of_anomalies(data, path_to_nn, station, col, season):
     data = data[data < 1000]
     data = data[data > 0]
@@ -92,7 +106,7 @@ def _save_temp_data(path, station_id, season, column, data):
     data.tofile(path + '/' + station_id + '/' + str(season) + '_' + str(column) + '.dat', sep=',')
 
 
-def _prepare_all_data(station_id, path_to_data, columns, path_to_save):
+def _prepare_all_data_multiple_files(station_id, path_to_data, columns, path_to_save):
     _create_directory_for_nn(station_id, columns, path_to_save)
 
     for col in range(len(columns)):
@@ -109,6 +123,32 @@ def _prepare_all_data(station_id, path_to_data, columns, path_to_save):
         file = open(path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
         file.write(str(year_min-10) + ',' + str(year_max+10))
         file.close()
+
+
+def _read_json_file(path_to_data):
+    with open(path_to_data, 'r') as j:
+        json_data = json.load(j)
+        return json_data
+
+
+def _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_save):
+    _create_directory_for_nn(station_id, columns, path_to_save)
+
+    all_data = _read_json_file(path_to_data)
+    for col in range(len(columns)):
+        if columns[col]:
+            year_min = 100000
+            year_max = -100000
+            for season in range(_SEASON_NUMBER):
+                data = _merge_data_for_season_json(season, all_data, col + 1)
+                data, season_min, season_max = _rid_of_anomalies(data, path_to_save, station_id, col, season)
+                year_min = min(year_min, season_min)
+                year_max = max(year_max, season_max)
+                _save_temp_data(path_to_save, station_id, season, col, data)
+
+            file = open(path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
+            file.write(str(year_min-10) + ',' + str(year_max+10))
+            file.close()
 
 
 def _create_model():
@@ -167,9 +207,26 @@ def _delete_temp_data(path_to_save, station_id, columns):
                 os.remove(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(i) + '.dat')
 
 
+def train_single_file(station_id, path_to_data, columns, path_to_save):
+
+    _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_save)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        threads = []
+        for season in range(_SEASON_NUMBER):
+            for i in range(len(columns)):
+                if columns[i]:
+                    threads.append(executor.submit(_train_model_for_season,
+                                                   path_to_save, station_id, season, i))
+        concurrent.futures.wait(threads)
+
+    _delete_temp_data(path_to_save, station_id, columns)
+
+
+# deprecated
 def train(station_id, path_to_data, columns, path_to_save):
 
-    _prepare_all_data(station_id, path_to_data, columns, path_to_save)
+    _prepare_all_data_multiple_files(station_id, path_to_data, columns, path_to_save)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         threads = []
