@@ -2,7 +2,7 @@ from typing import Callable
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThreadPool
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QApplication
 
 from gui.gui_available_observaion import reset_observation, set_observation
 from gui.main_window import Ui_main_window
@@ -143,6 +143,8 @@ def gui_init_train(ui: Ui_main_window,
 
         play_error_notification()
 
+        QApplication.alert(main_window)
+
         QMessageBox.warning(main_window, 'Warning', message, QMessageBox.Ok)
 
     def on_status_changed(status: str) -> None:
@@ -152,6 +154,8 @@ def gui_init_train(ui: Ui_main_window,
         on_train_finished()
 
         play_finish_notification()
+
+        QApplication.alert(main_window)
 
         station_id = get_station_id()
         stations_info[station_id]["is_trained"] = True
