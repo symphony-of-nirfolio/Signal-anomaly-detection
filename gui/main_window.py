@@ -14,10 +14,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_main_window(object):
     def setupUi(self, main_window):
         main_window.setObjectName("main_window")
-        main_window.resize(1360, 710)
+        main_window.resize(1342, 692)
         self.centralwidget = QtWidgets.QWidget(main_window)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.centralwidget)
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.main_horizontal_layout = QtWidgets.QHBoxLayout()
         self.main_horizontal_layout.setObjectName("main_horizontal_layout")
@@ -201,7 +202,7 @@ class Ui_main_window(object):
         self.diagrams_label.setAlignment(QtCore.Qt.AlignCenter)
         self.diagrams_label.setObjectName("diagrams_label")
         self.station_id_label_3 = QtWidgets.QLabel(self.diagram_parameters_frame)
-        self.station_id_label_3.setGeometry(QtCore.QRect(10, 40, 91, 31))
+        self.station_id_label_3.setGeometry(QtCore.QRect(10, 40, 261, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.station_id_label_3.setFont(font)
@@ -294,6 +295,15 @@ class Ui_main_window(object):
         self.statusbar = QtWidgets.QStatusBar(main_window)
         self.statusbar.setObjectName("statusbar")
         main_window.setStatusBar(self.statusbar)
+        self.toolBar = QtWidgets.QToolBar(main_window)
+        self.toolBar.setObjectName("toolBar")
+        main_window.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
+        self.action_creditor = QtWidgets.QAction(main_window)
+        self.action_creditor.setObjectName("action_creditor")
+        self.action_settings = QtWidgets.QAction(main_window)
+        self.action_settings.setObjectName("action_settings")
+        self.toolBar.addAction(self.action_creditor)
+        self.toolBar.addAction(self.action_settings)
 
         self.retranslateUi(main_window)
         QtCore.QMetaObject.connectSlotsByName(main_window)
@@ -331,6 +341,11 @@ class Ui_main_window(object):
         self.load_status_text_label.setText(_translate("main_window", "Load status:"))
         self.custom_data_push_button.setText(_translate("main_window", "Custom data"))
         self.label.setText(_translate("main_window", "Periods"))
+        self.toolBar.setWindowTitle(_translate("main_window", "toolBar"))
+        self.action_creditor.setText(_translate("main_window", "Creditor"))
+        self.action_creditor.setToolTip(_translate("main_window", "creditors"))
+        self.action_settings.setText(_translate("main_window", "Settings"))
+        self.action_settings.setToolTip(_translate("main_window", "settings"))
 
 
 if __name__ == "__main__":

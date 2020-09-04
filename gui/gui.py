@@ -3,8 +3,10 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QThreadPool
 
+from gui.gui_creditor import gui_init_creditor
 from gui.gui_data_extraction import gui_init_data_extraction
 from gui.gui_diagrams import gui_init_diagrams
+from gui.gui_settings import gui_init_settings
 from gui.gui_train import gui_init_train
 from gui.main_window import Ui_main_window
 from gui.window_with_close_listener import WindowWithCloseListener
@@ -83,7 +85,7 @@ def main_ui() -> None:
     busy_listeners.append(busy_listener_by_train)
     on_extract_finished.append(on_extract_finished_for_train)
 
-    busy_listener_by_diagrams, on_extract_finished_for_diagrams, close_listener =\
+    busy_listener_by_diagrams, on_extract_finished_for_diagrams, diagram_close_listener =\
         gui_init_diagrams(
             ui,
             main_window,
@@ -95,7 +97,7 @@ def main_ui() -> None:
 
     busy_listeners.append(busy_listener_by_diagrams)
     on_extract_finished.append(on_extract_finished_for_diagrams)
-    close_listeners.append(close_listener)
+    close_listeners.append(diagram_close_listener)
 
     busy_listener_by_data_extract =\
         gui_init_data_extraction(
@@ -109,6 +111,12 @@ def main_ui() -> None:
             on_extract_finished)
 
     busy_listeners.append(busy_listener_by_data_extract)
+
+    creditor_close_listener = gui_init_creditor(ui)
+    close_listeners.append(creditor_close_listener)
+
+    settings_close_listener = gui_init_settings(ui)
+    close_listeners.append(settings_close_listener)
 
     main_window.show()
     sys.exit(app.exec_())
