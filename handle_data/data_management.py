@@ -186,30 +186,13 @@ def get_anomaly_from_data(data: list, anomaly_text: str, season: int) -> dict:
     return anomaly_data
 
 
-# noinspection PyUnusedLocal
-def get_stations_data_from_file(stations_info: dict,
-                                station_id: str,
-                                on_error: Callable[[str], None],
-                                on_status_changed: Callable[[str], None],
-                                on_finished:
-                                Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> (dict, dict):
+def _try_get_stations_data_from_file(stations_info: dict,
+                                     station_id: str,
+                                     on_status_changed: Callable[[str], None],
+                                     on_finished:
+                                     Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> None:
     data_path = get_directory_path_for_station_data(station_id)
     model_path = get_directory_path_for_trained_model()
-
-    is_loading = True
-    current_index = 0
-    statuses = ["Loading", "Loading.", "Loading..", "Loading..."]
-
-    def status_update():
-        nonlocal current_index
-        while is_loading:
-            on_status_changed(statuses[current_index])
-            time.sleep(0.5)
-            current_index += 1
-            if current_index == len(statuses):
-                current_index = 0
-
-    _thread.start_new_thread(status_update, ())
 
     min_year = 1800
     max_year = 2100
@@ -258,7 +241,39 @@ def get_stations_data_from_file(stations_info: dict,
 
         write_stations_info_to_json(stations_info)
 
-    is_loading = False
-
     on_status_changed("Finished")
     on_finished(data, anomaly_data, is_trained, trained_on)
+
+
+def get_stations_data_from_file(stations_info: dict,
+                                station_id: str,
+                                on_error: Callable[[str], None],
+                                on_status_changed: Callable[[str], None],
+                                on_finished:
+                                Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> None:
+    is_loading = True
+    current_index = 0
+    statuses = ["Loading", "Loading.", "Loading..", "Loading..."]
+
+    def status_update():
+        nonlocal current_index
+        while is_loading:
+            on_status_changed(statuses[current_index])
+            time.sleep(0.5)
+            current_index += 1
+            if current_index == len(statuses):
+                current_index = 0
+
+    _thread.start_new_thread(status_update, ())
+
+    # noinspection PyBroadException
+    try:
+        _try_get_stations_data_from_file(stations_info,
+                                         station_id,
+                                         on_status_changed,
+                                         on_finished)
+    except:
+        is_loading = False
+        on_error("Load crashed")
+
+    is_loading = False

@@ -6,7 +6,6 @@ from Backend.TrainModel import train
 from handle_data.data_management import create_directory_for_station, create_directory_for_trained_model
 
 
-# noinspection PyUnusedLocal
 def train_model(station_id: str,
                 on_error: Callable[[str], None],
                 on_status_changed: Callable[[str], None],
@@ -30,9 +29,16 @@ def train_model(station_id: str,
             if current_index == len(statuses):
                 current_index = 0
 
-    status_updater = _thread.start_new_thread(status_update, ())
+    _thread.start_new_thread(status_update, ())
 
-    train(station_id, path_to_data, (need_min, need_max, need_average), path_to_save)
+    # noinspection PyBroadException
+    try:
+        train(station_id, path_to_data, (need_min, need_max, need_average), path_to_save)
+    except:
+        is_training = False
+
+        on_error("Train crashed")
+        return
 
     is_training = False
 
