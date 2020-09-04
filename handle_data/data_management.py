@@ -66,6 +66,21 @@ def create_directory_for_station(station_id: str) -> str:
     return path
 
 
+def get_directory_path_for_single_file_station_data(station_id: str) -> str:
+    return stations_data_path + "/" + station_id
+
+
+def get_file_path_for_single_file_station_data(station_id: str) -> str:
+    return stations_data_path + "/" + station_id + "/data.json"
+
+
+def create_directory_for_single_file_station_and_return_file_path(station_id: str) -> str:
+    path = get_directory_path_for_single_file_station_data(station_id)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return get_file_path_for_single_file_station_data(station_id)
+
+
 def get_directory_path_for_trained_model() -> str:
     return model_data_path
 
@@ -94,44 +109,6 @@ def _get_season_by_month(month: int):
         return 2
     if 9 <= month <= 11:
         return 3
-
-
-def _get_data_from_file(path: str,
-                        key: str,
-                        month: int,
-                        data: dict,
-                        anomaly_data: dict,
-                        is_trained: bool,
-                        trained_on: (bool, bool, bool),
-                        prediction: Prediction) -> None:
-    try:
-        current_data = np.fromfile(path, sep=',')
-        current_data = np.reshape(current_data, (current_data.shape[0] // 4, 4))
-        if is_trained:
-            anomaly_data[key] = {}
-            if trained_on[0]:
-                anomaly_array, zone = prediction.get_result(current_data[:, 1], 0, _get_season_by_month(month))
-                anomaly_data[key]["min"] = (anomaly_array.tolist(), zone)
-            if trained_on[1]:
-                anomaly_array, zone = prediction.get_result(current_data[:, 2], 1, _get_season_by_month(month))
-                anomaly_data[key]["max"] = (anomaly_array.tolist(), zone)
-            if trained_on[2]:
-                anomaly_array, zone = prediction.get_result(current_data[:, 3], 2, _get_season_by_month(month))
-                anomaly_data[key]["average"] = (anomaly_array.tolist(), zone)
-
-        info_by_month = []
-        for i in range(current_data.shape[0]):
-            info = Info()
-            info.day = current_data[i][0]
-            info.min = current_data[i][1]
-            info.max = current_data[i][2]
-            info.average = current_data[i][3]
-
-            info_by_month.append(info)
-
-        data[key] = info_by_month
-    finally:
-        return
 
 
 def _save_to_json_file(path: str, data: dict) -> None:
@@ -167,6 +144,52 @@ def _get_value_list_from_data(data: list, anomaly_text: str) -> np.array:
     return np.array(value_list)
 
 
+def _info_list_to_value_list(data: list) -> list:
+    value_list = []
+
+    for info in data:
+        value_list.append(info.day)
+        value_list.append(info.min)
+        value_list.append(info.max)
+        value_list.append(info.average)
+
+    return value_list
+
+
+def save_data_to_file(data: dict, path: str) -> None:
+    converted_data = {}
+
+    for key in data:
+        converted_data[key] = _info_list_to_value_list(data[key])
+
+    _save_to_json_file(path, converted_data)
+
+
+def _value_list_to_info_list(value_list: list) -> list:
+    data = []
+
+    for i in range(len(value_list) // 4):
+        info = Info()
+        info.day = value_list[i * 4 + 0]
+        info.min = value_list[i * 4 + 1]
+        info.max = value_list[i * 4 + 2]
+        info.average = value_list[i * 4 + 3]
+        data.append(info)
+
+    return data
+
+
+def load_data_from_file(path: str) -> dict:
+    data = _load_from_json_file(path)
+
+    converted_data = {}
+
+    for key in data:
+        converted_data[key] = _value_list_to_info_list(data[key])
+
+    return converted_data
+
+
 def get_anomaly_from_data(data: list, anomaly_text: str, season: int) -> dict:
     anomaly_data = {}
     prediction = Prediction.get_instance()
@@ -186,21 +209,34 @@ def get_anomaly_from_data(data: list, anomaly_text: str, season: int) -> dict:
     return anomaly_data
 
 
+def _calculate_anomaly_data(data: list,
+                            key: str,
+                            month: int,
+                            anomaly_data: dict,
+                            trained_on: (bool, bool, bool),
+                            prediction: Prediction) -> None:
+    anomaly_data[key] = {}
+    if trained_on[0]:
+        value_list = _get_value_list_from_data(data, "min")
+        anomaly_array, zone = prediction.get_result(value_list, 0, _get_season_by_month(month))
+        anomaly_data[key]["min"] = (anomaly_array.tolist(), zone)
+    if trained_on[1]:
+        value_list = _get_value_list_from_data(data, "max")
+        anomaly_array, zone = prediction.get_result(value_list, 1, _get_season_by_month(month))
+        anomaly_data[key]["max"] = (anomaly_array.tolist(), zone)
+    if trained_on[2]:
+        value_list = _get_value_list_from_data(data, "average")
+        anomaly_array, zone = prediction.get_result(value_list, 2, _get_season_by_month(month))
+        anomaly_data[key]["average"] = (anomaly_array.tolist(), zone)
+
+
 def _try_get_stations_data_from_file(stations_info: dict,
                                      station_id: str,
                                      on_status_changed: Callable[[str], None],
                                      on_finished:
                                      Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> None:
-    data_path = get_directory_path_for_station_data(station_id)
     model_path = get_directory_path_for_trained_model()
 
-    min_year = 1800
-    max_year = 2100
-
-    min_month = 1
-    max_month = 12
-
-    need_to_load_data = True
     need_to_load_anomaly_data = False
 
     prediction = Prediction.get_instance()
@@ -214,30 +250,20 @@ def _try_get_stations_data_from_file(stations_info: dict,
                       stations_info[station_id]["is_max_trained"],
                       stations_info[station_id]["is_average_trained"])
 
-    data = {}
+    data = load_data_from_file(get_file_path_for_single_file_station_data(station_id))
     anomaly_data = {}
-
-    if stations_info[station_id]["is_cashed_data"]:
-        data = _convert_to_data(_load_from_json_file(get_file_path_for_one_file_data(station_id)))
-        need_to_load_data = False
 
     if stations_info[station_id]["is_cashed_anomaly_data"]:
         anomaly_data = _load_from_json_file(get_file_path_for_one_file_anomaly_data(station_id))
         need_to_load_anomaly_data = False
 
-    if need_to_load_data or need_to_load_anomaly_data:
-        for year in range(min_year, max_year):
-            for month in range(min_month, max_month):
-                key = "{}_{:02d}".format(year, month)
-                path = "{}/{}".format(data_path, key)
-                _get_data_from_file(path, key, month, data, anomaly_data, is_trained, trained_on, prediction)
+    if need_to_load_anomaly_data:
+        for key in data:
+            month = int(key[-2:])
+            _calculate_anomaly_data(data[key], key, month, anomaly_data, trained_on, prediction)
 
-        _save_to_json_file(get_file_path_for_one_file_data(station_id), data)
-        stations_info[station_id]["is_cashed_data"] = True
-
-        if is_trained:
-            _save_to_json_file(get_file_path_for_one_file_anomaly_data(station_id), anomaly_data)
-            stations_info[station_id]["is_cashed_anomaly_data"] = True
+        _save_to_json_file(get_file_path_for_one_file_anomaly_data(station_id), anomaly_data)
+        stations_info[station_id]["is_cashed_anomaly_data"] = True
 
         write_stations_info_to_json(stations_info)
 

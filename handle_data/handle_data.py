@@ -4,7 +4,8 @@ from typing import Callable
 import numpy as np
 import requests
 
-from handle_data.data_management import create_directory_for_station, write_stations_info_to_json
+from handle_data.data_management import create_directory_for_station, write_stations_info_to_json, \
+    save_data_to_file, create_directory_for_single_file_station_and_return_file_path
 from handle_data.info import Info
 
 
@@ -116,10 +117,12 @@ def handle_data_to_files(
     stations_info[station_id]["need_max"] = contain_max_temperature
     stations_info[station_id]["need_average"] = contain_average_temperature
     stations_info[station_id]["is_trained"] = is_trained
-    stations_info[station_id]["is_cashed_data"] = False
     stations_info[station_id]["is_cashed_anomaly_data"] = False
 
     write_stations_info_to_json(stations_info)
+
+    single_file_path = create_directory_for_single_file_station_and_return_file_path(station_id)
+    save_data_to_file(data, single_file_path)
 
     for key in data:
         current_data = data[key]

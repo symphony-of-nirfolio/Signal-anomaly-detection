@@ -158,7 +158,6 @@ def gui_init_train(ui: Ui_main_window,
         stations_info[station_id]["is_min_trained"] = need_min
         stations_info[station_id]["is_max_trained"] = need_max
         stations_info[station_id]["is_average_trained"] = need_average
-        stations_info[station_id]["is_cashed_data"] = False
         stations_info[station_id]["is_cashed_anomaly_data"] = False
 
         write_stations_info_to_json(stations_info)

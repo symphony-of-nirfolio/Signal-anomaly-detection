@@ -22,7 +22,8 @@ def gui_init_diagrams(ui: Ui_main_window,
                       set_busy_by: Callable[..., None],
                       is_busy_by: Callable[..., bool],
                       play_finish_notification: Callable[[], None],
-                      play_error_notification: Callable[[], None]) -> (Callable[[], None], Callable[[], None], Callable[[], None]):
+                      play_error_notification: Callable[[], None]) ->\
+        (Callable[[], None], Callable[[], None], Callable[[], None]):
     select_station_id_for_diagram_combo_box = ui.select_station_id_for_diagram_combo_box
     select_diagram_observations_group_box = ui.select_diagram_observations_group_box
     select_diagram_observation_vertical_layout = ui.select_diagram_observation_vertical_layout
