@@ -51,6 +51,8 @@ def gui_init_diagrams(ui: Ui_main_window,
 
     def get_station_id() -> str:
         text = select_station_id_for_diagram_combo_box.currentText()
+        if text == "(None)":
+            return text
         return text[:text.find(" ")]
 
     def is_valid_station_id() -> bool:

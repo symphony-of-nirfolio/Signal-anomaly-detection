@@ -32,6 +32,8 @@ def gui_init_train(ui: Ui_main_window,
 
     def get_station_id() -> str:
         text = select_station_id_for_training_combo_box.currentText()
+        if text == "(None)":
+            return text
         return text[:text.find(" ")]
 
     def update_enabled_train_button() -> None:
