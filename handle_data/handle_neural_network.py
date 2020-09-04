@@ -2,8 +2,9 @@ import _thread
 import time
 from typing import Callable
 
-from Backend.TrainModel import train
-from handle_data.data_management import create_directory_for_station, create_directory_for_trained_model
+from Backend.TrainModel import train_single_file
+from handle_data.data_management import create_directory_for_trained_model, \
+    get_file_path_for_single_file_station_data
 
 
 def train_model(station_id: str,
@@ -13,7 +14,7 @@ def train_model(station_id: str,
                 need_min: bool,
                 need_max: bool,
                 need_average: bool) -> None:
-    path_to_data = create_directory_for_station(station_id)
+    path_to_data = get_file_path_for_single_file_station_data(station_id)
     path_to_save = create_directory_for_trained_model()
 
     is_training = True
@@ -33,7 +34,7 @@ def train_model(station_id: str,
 
     # noinspection PyBroadException
     try:
-        train(station_id, path_to_data, (need_min, need_max, need_average), path_to_save)
+        train_single_file(station_id, path_to_data, (need_min, need_max, need_average), path_to_save)
     except:
         is_training = False
 

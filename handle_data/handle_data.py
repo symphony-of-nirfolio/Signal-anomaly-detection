@@ -1,11 +1,10 @@
 import datetime
 from typing import Callable
 
-import numpy as np
 import requests
 
-from handle_data.data_management import create_directory_for_station, write_stations_info_to_json, \
-    save_data_to_file, create_directory_for_single_file_station_and_return_file_path
+from handle_data.data_management import write_stations_info_to_json, save_data_to_file,\
+    create_directory_for_single_file_station_and_return_file_path
 from handle_data.info import Info
 
 
@@ -102,9 +101,7 @@ def handle_data_to_files(
         else:
             data[name] = [info]
 
-    on_status_changed("Saving data to files")
-
-    path = create_directory_for_station(station_id)
+    on_status_changed("Saving data to file")
 
     is_trained = False
     if station_id in stations_info:
@@ -123,25 +120,6 @@ def handle_data_to_files(
 
     single_file_path = create_directory_for_single_file_station_and_return_file_path(station_id)
     save_data_to_file(data, single_file_path)
-
-    for key in data:
-        current_data = data[key]
-        length = len(current_data)
-
-        sorted(current_data, key=lambda current_info: current_info.day)
-
-        size = 4
-        out_data = np.zeros((length, size))
-
-        for i in range(length):
-            info = current_data[i]
-
-            out_data[i][0] = info.day
-            out_data[i][1] = info.min
-            out_data[i][2] = info.max
-            out_data[i][3] = info.average
-
-        out_data.tofile(path + "/" + key, sep=',')
 
     print("Min of min temperatures: {}".format(min_temperature))
     print("Max of max temperatures: {}".format(max_temperature))
