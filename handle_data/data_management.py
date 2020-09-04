@@ -55,17 +55,6 @@ def write_audio_info_to_json(audio_info: dict) -> None:
         json.dump(audio_info, audio_info_file)
 
 
-def get_directory_path_for_station_data(station_id: str) -> str:
-    return stations_data_path + "/" + station_id + "/data"
-
-
-def create_directory_for_station(station_id: str) -> str:
-    path = get_directory_path_for_station_data(station_id)
-    if not os.path.exists(path):
-        os.makedirs(path)
-    return path
-
-
 def get_directory_path_for_single_file_station_data(station_id: str) -> str:
     return stations_data_path + "/" + station_id
 
@@ -92,12 +81,8 @@ def create_directory_for_trained_model() -> str:
     return path
 
 
-def get_file_path_for_one_file_data(station_id: str) -> str:
-    return stations_data_path + "/" + station_id + "/cash_data"
-
-
-def get_file_path_for_one_file_anomaly_data(station_id: str) -> str:
-    return stations_data_path + "/" + station_id + "/cash_anomaly_data"
+def _get_file_path_for_cashed_file_anomaly_data(station_id: str) -> str:
+    return stations_data_path + "/" + station_id + "/cash_anomaly_data.json"
 
 
 def _get_season_by_month(month: int):
@@ -254,7 +239,7 @@ def _try_get_stations_data_from_file(stations_info: dict,
     anomaly_data = {}
 
     if stations_info[station_id]["is_cashed_anomaly_data"]:
-        anomaly_data = _load_from_json_file(get_file_path_for_one_file_anomaly_data(station_id))
+        anomaly_data = _load_from_json_file(_get_file_path_for_cashed_file_anomaly_data(station_id))
         need_to_load_anomaly_data = False
 
     if need_to_load_anomaly_data:
@@ -262,7 +247,7 @@ def _try_get_stations_data_from_file(stations_info: dict,
             month = int(key[-2:])
             _calculate_anomaly_data(data[key], key, month, anomaly_data, trained_on, prediction)
 
-        _save_to_json_file(get_file_path_for_one_file_anomaly_data(station_id), anomaly_data)
+        _save_to_json_file(_get_file_path_for_cashed_file_anomaly_data(station_id), anomaly_data)
         stations_info[station_id]["is_cashed_anomaly_data"] = True
 
         write_stations_info_to_json(stations_info)
