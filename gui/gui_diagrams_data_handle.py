@@ -291,13 +291,15 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
         if current_period_index == "(None)" or current_period_index == "":
             return
 
+        title = get_station_name() + " " + current_period_index
+
         current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
-                        {}, get_anomaly_text(), get_station_name(),
+                        {}, get_anomaly_text(), title,
                         need_min_temperature, need_max_temperature, need_average_temperature)
 
         if is_trained():
             current_data = (main_window, diagram_vertical_layout, current_data_dict[current_period_index],
-                            current_anomaly_data_dict[current_period_index], get_anomaly_text(), get_station_name(),
+                            current_anomaly_data_dict[current_period_index], get_anomaly_text(), title,
                             need_min_temperature, need_max_temperature, need_average_temperature)
 
         if current_period_type_index == 1:
