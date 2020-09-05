@@ -236,20 +236,19 @@ def _add_anomaly_line_to_axes(start_day: float, end_day: float,
 
     red_zone_y = (0.06, 100.0) if k > 0.0 else (100.0, 0.06)
     yellow_zone_y = (0.03, 0.06) if k > 0.0 else (0.06, 0.03)
-    green_zone_y = (-0.001, 0.03) if k > 0.0 else (0.03, -0.001)
 
     red_zone_x = (get_x(red_zone_y[0]), get_x(red_zone_y[1]))
     yellow_zone_x = (get_x(yellow_zone_y[0]), get_x(yellow_zone_y[1]))
-    green_zone_x = (get_x(green_zone_y[0]), get_x(green_zone_y[1]))
 
-    try_add_zone_to_axes(green_zone_x, green_zone_y, 'g', 2)
     try_add_zone_to_axes(yellow_zone_x, yellow_zone_y, 'orange', 2)
     try_add_zone_to_axes(red_zone_x, red_zone_y, 'r', 2)
 
 
-def _add_anomaly_to_axes(anomaly_days: list, anomaly_observations: list, axes: Any) -> None:
+def _add_anomaly_to_axes(anomaly_days: list, anomaly_observations: list, axes: Any, line_width=2) -> None:
     if len(anomaly_days) == 0:
         return
+
+    axes.plot(anomaly_days, anomaly_observations, 'g', linewidth=line_width)
 
     for i in range(1, len(anomaly_days)):
         _add_anomaly_line_to_axes(anomaly_days[i - 1], anomaly_days[i],
