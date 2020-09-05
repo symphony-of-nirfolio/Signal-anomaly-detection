@@ -31,7 +31,8 @@ def main_ui() -> None:
     init_files_and_directories_if_not_exist()
     stations_info = get_stations_info_from_json()
     play_finish_notification, play_error_notification, get_sound_effect_volume, get_music_volume,\
-        set_sound_effect_volume, set_music_volume = audio_manager()
+        set_sound_effect_volume, set_music_volume, audio_manager_close_listener = audio_manager()
+    close_listeners.append(audio_manager_close_listener)
 
     thread_pool = QThreadPool()
     event_list = []

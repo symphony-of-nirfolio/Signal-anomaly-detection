@@ -14,20 +14,21 @@ def audio_manager() -> (Callable[[], None],
                         Callable[[], float],
                         Callable[[], float],
                         Callable[[float], None],
-                        Callable[[float], None]):
-    pygame.init()
-    pygame.display.init()
-    pygame.mixer.init()
-
+                        Callable[[float], None],
+                        Callable[[], None]):
     music_name = "background_music_{}.mp3"
 
     musics_count = 5
     last_music_index = -1
 
+    need_play_next_music = True
+
     audio_info = get_audio_info_from_json()
 
+    pygame.mixer.init()
     pygame.mixer.pre_init(44100, 16, 2, 4096)
     pygame.init()
+    pygame.display.init()
 
     music_ended = pygame.USEREVENT + 1
     # noinspection PyArgumentList
@@ -51,12 +52,7 @@ def audio_manager() -> (Callable[[], None],
         pygame.mixer.music.load(file_name)
         pygame.mixer.music.play()
 
-    def add_random_music_to_queue() -> None:
-        file_name = get_random_music_file_name()
-
-        pygame.mixer.music.queue(file_name)
-
-    def music_switcher():
+    def music_switcher() -> None:
         is_music_switcher_running = True
         while is_music_switcher_running:
 
@@ -64,8 +60,8 @@ def audio_manager() -> (Callable[[], None],
                 if event.type == pygame.QUIT:
                     is_music_switcher_running = False
 
-                if event.type == music_ended and is_music_switcher_running:
-                    add_random_music_to_queue()
+                if event.type == music_ended and need_play_next_music:
+                    play_random_music()
 
     def play_finish_notification() -> None:
         pygame.mixer.Channel(1).play(pygame.mixer.Sound(_audio_source_path + "finish_notification.wav"))
@@ -102,14 +98,17 @@ def audio_manager() -> (Callable[[], None],
         audio_info["music_volume"] = volume
         write_audio_info_to_json(audio_info)
 
+    def close_listener() -> None:
+        nonlocal need_play_next_music
+        need_play_next_music = False
+
     _thread.start_new_thread(music_switcher, ())
 
     play_random_music()
-    add_random_music_to_queue()
 
     pygame.mixer.music.set_volume(get_music_volume())
     pygame.mixer.Channel(1).set_volume(get_sound_effect_volume())
     pygame.mixer.Channel(2).set_volume(get_sound_effect_volume())
 
     return play_finish_notification, play_error_notification, get_sound_effect_volume, get_music_volume,\
-        set_sound_effect_volume, set_music_volume
+        set_sound_effect_volume, set_music_volume, close_listener
