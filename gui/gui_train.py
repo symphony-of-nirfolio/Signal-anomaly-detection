@@ -157,6 +157,8 @@ def gui_init_train(ui: Ui_main_window,
 
         QApplication.alert(main_window)
 
+        train_push_button.setText("Retrain")
+
         station_id = get_station_id()
         stations_info[station_id]["is_trained"] = True
         stations_info[station_id]["is_min_trained"] = need_min
