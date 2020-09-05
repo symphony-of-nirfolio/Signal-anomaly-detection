@@ -220,6 +220,12 @@ def gui_init_diagrams(ui: Ui_main_window,
         if is_updating_station_id_combo_box:
             return
 
+        if is_custom_data_window_open:
+            # noinspection PyTypeChecker
+            clean_anomaly_observation(custom_data_observation_for_anomaly_combo_box)
+            # noinspection PyUnresolvedReferences
+            custom_data_window.setEnabled(False)
+
         if index <= 0:
             select_period_type_combo_box.setCurrentIndex(0)
             reset_observation(select_diagram_observation_vertical_layout)
@@ -227,11 +233,6 @@ def gui_init_diagrams(ui: Ui_main_window,
             last_station_id = ""
             clean_anomaly_observation(select_observation_for_anomaly_combo_box)
             select_observation_for_anomaly_combo_box.setEnabled(False)
-            if is_custom_data_window_open:
-                # noinspection PyTypeChecker
-                clean_anomaly_observation(custom_data_observation_for_anomaly_combo_box)
-                # noinspection PyUnresolvedReferences
-                custom_data_window.setEnabled(False)
         else:
             station_id = get_station_id()
             if station_id != last_station_id:
