@@ -21,7 +21,9 @@ def audio_manager() -> (Callable[[], None],
     musics_count = 5
     last_music_index = -1
 
+    is_music_switcher_running = True
     need_play_next_music = True
+    music_switcher = None
 
     audio_info = get_audio_info_from_json()
 
@@ -52,13 +54,14 @@ def audio_manager() -> (Callable[[], None],
         pygame.mixer.music.load(file_name)
         pygame.mixer.music.play()
 
-    def music_switcher() -> None:
-        is_music_switcher_running = True
-        while is_music_switcher_running:
+    def music_switch() -> None:
+        nonlocal is_music_switcher_running
 
+        while is_music_switcher_running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_music_switcher_running = False
+                    pygame.quit()
 
                 if event.type == music_ended and need_play_next_music:
                     play_random_music()
@@ -99,10 +102,11 @@ def audio_manager() -> (Callable[[], None],
         write_audio_info_to_json(audio_info)
 
     def close_listener() -> None:
-        nonlocal need_play_next_music
+        nonlocal need_play_next_music, is_music_switcher_running
         need_play_next_music = False
+        is_music_switcher_running = False
 
-    _thread.start_new_thread(music_switcher, ())
+    _thread.start_new_thread(music_switch, ())
 
     play_random_music()
 
