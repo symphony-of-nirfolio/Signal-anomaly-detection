@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThreadPool
@@ -20,7 +20,7 @@ def gui_init_diagrams(ui: Ui_main_window,
                       thread_pool: QThreadPool,
                       stations_info: dict,
                       set_busy_by: Callable[..., None],
-                      is_busy_by: Callable[..., bool],
+                      is_busy_by: Callable[..., Tuple[bool, str]],
                       play_finish_notification: Callable[[], None],
                       play_error_notification: Callable[[], None]) ->\
         (Callable[[], None], Callable[[], None], Callable[[], None]):
@@ -47,10 +47,10 @@ def gui_init_diagrams(ui: Ui_main_window,
     custom_data_ui = None
     custom_data_observation_for_anomaly_combo_box = None
 
-    # noinspection PyUnusedLocal
     is_custom_data_window_open = False
 
     is_updating_station_id_combo_box = False
+    is_loading = False
 
     def get_station_id() -> str:
         text = select_station_id_for_diagram_combo_box.currentText()
@@ -79,8 +79,12 @@ def gui_init_diagrams(ui: Ui_main_window,
                 text = key
             select_station_id_for_diagram_combo_box.addItem(text)
 
-            if is_busy_by(key, is_diagram=True):
+            is_busy, tooltip = is_busy_by(key, is_diagram=True)
+            if is_busy:
                 select_station_id_for_diagram_combo_box.model().item(i).setEnabled(False)
+                select_station_id_for_diagram_combo_box.model().item(i).setToolTip(tooltip)
+            else:
+                select_station_id_for_diagram_combo_box.model().item(i).setToolTip(None)
 
             i += 1
 
@@ -92,18 +96,29 @@ def gui_init_diagrams(ui: Ui_main_window,
         is_updating_station_id_combo_box = False
 
     def lock_components() -> None:
+        tool_tip = "Data is loading now"
         select_station_id_for_diagram_combo_box.setEnabled(False)
+        select_station_id_for_diagram_combo_box.setToolTip(tool_tip)
         select_period_type_combo_box.setEnabled(False)
+        select_period_type_combo_box.setToolTip(tool_tip)
         select_observation_for_anomaly_combo_box.setEnabled(False)
+        select_observation_for_anomaly_combo_box.setToolTip(tool_tip)
         select_diagram_observations_group_box.setEnabled(False)
+        select_diagram_observations_group_box.setToolTip(tool_tip)
         periods_list_widget.setEnabled(False)
+        periods_list_widget.setToolTip(tool_tip)
 
     def unlock_components() -> None:
         select_station_id_for_diagram_combo_box.setEnabled(True)
+        select_station_id_for_diagram_combo_box.setToolTip(None)
         select_period_type_combo_box.setEnabled(True)
+        select_period_type_combo_box.setToolTip(None)
         select_observation_for_anomaly_combo_box.setEnabled(True)
+        select_observation_for_anomaly_combo_box.setToolTip(None)
         select_diagram_observations_group_box.setEnabled(True)
+        select_diagram_observations_group_box.setToolTip(None)
         periods_list_widget.setEnabled(True)
+        periods_list_widget.setToolTip(None)
 
     def clean_anomaly_observation(combo_box: QtWidgets.QComboBox) -> None:
         combo_box.clear()
@@ -114,6 +129,8 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         if stations_info[station_id]["is_trained"]:
             combo_box.setEnabled(True)
+            # noinspection PyTypeChecker
+            combo_box.setToolTip(None)
 
             if stations_info[station_id]["is_max_trained"]:
                 combo_box.addItem("Max temperature")
@@ -123,11 +140,18 @@ def gui_init_diagrams(ui: Ui_main_window,
                 combo_box.addItem("Min temperature")
         else:
             combo_box.setEnabled(False)
+            combo_box.setToolTip("For this station isn't data trained")
 
     def on_load_started() -> None:
+        nonlocal is_loading
+        is_loading = True
+
         lock_components()
 
     def on_load_finished() -> None:
+        nonlocal is_loading
+        is_loading = False
+
         unlock_components()
 
     def on_error(message: str) -> None:
@@ -181,9 +205,13 @@ def gui_init_diagrams(ui: Ui_main_window,
             if stations_info[station_id]["is_trained"]:
                 # noinspection PyUnresolvedReferences
                 custom_data_window.setEnabled(True)
+                # noinspection PyStatementEffect,PyUnresolvedReferences
+                custom_data_window.setToolTip(None)
             else:
                 # noinspection PyUnresolvedReferences
                 custom_data_window.setEnabled(False)
+                # noinspection PyStatementEffect,PyUnresolvedReferences
+                custom_data_window.setToolTip("For this station isn't data trained")
 
     def on_error_to_event_list(message: str) -> None:
         event_list.append(lambda: on_error(message))
@@ -225,6 +253,12 @@ def gui_init_diagrams(ui: Ui_main_window,
             clean_anomaly_observation(custom_data_observation_for_anomaly_combo_box)
             # noinspection PyUnresolvedReferences
             custom_data_window.setEnabled(False)
+            if index <= 0:
+                # noinspection PyStatementEffect,PyUnresolvedReferences
+                custom_data_window.setToolTip("Station not selected")
+            else:
+                # noinspection PyStatementEffect,PyUnresolvedReferences
+                custom_data_window.setToolTip("For this station isn't data trained")
 
         if index <= 0:
             select_period_type_combo_box.setCurrentIndex(0)
@@ -233,12 +267,16 @@ def gui_init_diagrams(ui: Ui_main_window,
             last_station_id = ""
             clean_anomaly_observation(select_observation_for_anomaly_combo_box)
             select_observation_for_anomaly_combo_box.setEnabled(False)
+            select_observation_for_anomaly_combo_box.setToolTip("Station not selected")
         else:
             station_id = get_station_id()
             if station_id != last_station_id:
                 set_busy_by(station_id, is_diagram=True)
                 load(station_id)
                 last_station_id = station_id
+                if is_custom_data_window_open:
+                    # noinspection PyStatementEffect,PyUnresolvedReferences
+                    custom_data_window.setToolTip("Data is loading now")
 
     def on_custom_data_window_closed():
         nonlocal is_custom_data_window_open, custom_data_observation_for_anomaly_combo_box
@@ -246,6 +284,7 @@ def gui_init_diagrams(ui: Ui_main_window,
         custom_data_observation_for_anomaly_combo_box = None
 
         custom_data_push_button.setEnabled(True)
+        custom_data_push_button.setToolTip(None)
 
     def on_custom_data_push_button_clicked():
         nonlocal custom_data_window, custom_data_ui, is_custom_data_window_open,\
@@ -262,9 +301,17 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         is_custom_data_window_open = True
         custom_data_push_button.setEnabled(False)
+        custom_data_push_button.setToolTip("Custom data window already open")
 
-        if not is_trained:
+        if is_loading:
             custom_data_window.setEnabled(False)
+            custom_data_window.setToolTip("Data is loading now")
+        elif last_station_id == "":
+            custom_data_window.setEnabled(False)
+            custom_data_window.setToolTip("Station not selected")
+        elif not is_trained:
+            custom_data_window.setEnabled(False)
+            custom_data_window.setToolTip("For this station isn't data trained")
 
     def close_listener() -> None:
         if is_custom_data_window_open:

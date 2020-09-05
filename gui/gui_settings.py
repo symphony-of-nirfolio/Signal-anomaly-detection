@@ -41,11 +41,13 @@ def gui_init_settings(ui: Ui_main_window,
         nonlocal is_settings_window_open
         is_settings_window_open = False
         action_settings.setEnabled(True)
+        action_settings.setToolTip(None)
 
     def on_action_settings_clicked():
         nonlocal is_settings_window_open, settings_window
         is_settings_window_open = True
         action_settings.setEnabled(False)
+        action_settings.setToolTip("Setting window already open")
 
         settings_window = WindowWithCloseListener(on_settings_window_close)
         settings_ui = Ui_settings_window()

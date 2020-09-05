@@ -20,11 +20,14 @@ def _gui_init_tutorial(tutorial_push_button: QtWidgets.QPushButton, title: str, 
         nonlocal is_tutorial_window_open
         is_tutorial_window_open = False
         tutorial_push_button.setEnabled(True)
+        # noinspection PyTypeChecker
+        tutorial_push_button.setToolTip(None)
 
     def on_tutorial_push_button_clicked():
         nonlocal is_tutorial_window_open, tutorial_window
         is_tutorial_window_open = True
         tutorial_push_button.setEnabled(False)
+        tutorial_push_button.setToolTip("Tutorial window already open now")
 
         tutorial_window = WindowWithCloseListener(on_tutorial_window_close)
         tutorial_ui = Ui_tutorial_window()
