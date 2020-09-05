@@ -9,6 +9,7 @@ from gui.gui_data_extraction import gui_init_data_extraction
 from gui.gui_diagrams import gui_init_diagrams
 from gui.gui_settings import gui_init_settings
 from gui.gui_train import gui_init_train
+from gui.gui_tutorial import gui_init_usa_tutorial, gui_init_all_other_tutorial
 from gui.main_window import Ui_main_window
 from gui.window_with_close_listener import WindowWithCloseListener
 from handle_data.data_management import get_stations_info_from_json, init_files_and_directories_if_not_exist
@@ -123,6 +124,12 @@ def main_ui() -> None:
 
     creditor_close_listener = gui_init_creditor(ui)
     close_listeners.append(creditor_close_listener)
+
+    usa_tutorial_close_listener = gui_init_usa_tutorial(ui)
+    close_listeners.append(usa_tutorial_close_listener)
+
+    all_other_tutorial_close_listener = gui_init_all_other_tutorial(ui)
+    close_listeners.append(all_other_tutorial_close_listener)
 
     settings_close_listener = gui_init_settings(ui,
                                                 get_sound_effect_volume,
