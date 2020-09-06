@@ -176,7 +176,7 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
             update_limits_push_button.setEnabled(False)
             update_limits_push_button.setToolTip("Min temperature more than max")
             reset_push_button.setEnabled(False)
-            reset_push_button.setToolTip("Min temperature more then max")
+            reset_push_button.setToolTip("Min temperature more than max")
 
     def on_reset_push_button_clicked() -> None:
         reset_sliders(False)
