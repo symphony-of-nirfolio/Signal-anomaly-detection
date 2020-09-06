@@ -70,11 +70,11 @@ def main_ui() -> None:
 
     def is_busy_by(station_id: str, is_data_extract=False, is_train=False, is_diagram=False) -> (bool, str):
         if not is_data_extract and busy_by_data_extract != "" and busy_by_data_extract == station_id:
-            return True, "Station busy by Data extraction"
+            return True, "Station is busy by data extraction"
         if not is_train and busy_by_train != "" and busy_by_train == station_id:
-            return True, "Station busy by Training"
+            return True, "Station is busy by training"
         if not is_diagram and busy_by_diagram != "" and busy_by_diagram == station_id:
-            return True, "Station busy by Diagrams"
+            return True, "Station is busy by diagrams"
         return False, ""
 
     busy_listener_by_train, on_extract_finished_for_train =\
