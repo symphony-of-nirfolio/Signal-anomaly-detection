@@ -140,7 +140,7 @@ def gui_init_diagrams(ui: Ui_main_window,
                 combo_box.addItem("Min temperature")
         else:
             combo_box.setEnabled(False)
-            combo_box.setToolTip("For this station isn't data trained")
+            combo_box.setToolTip("Data isn't trained for this station")
 
     def on_load_started() -> None:
         nonlocal is_loading
@@ -211,7 +211,7 @@ def gui_init_diagrams(ui: Ui_main_window,
                 # noinspection PyUnresolvedReferences
                 custom_data_window.setEnabled(False)
                 # noinspection PyStatementEffect,PyUnresolvedReferences
-                custom_data_window.setToolTip("For this station isn't data trained")
+                custom_data_window.setToolTip("Data isn't trained for this station")
 
     def on_error_to_event_list(message: str) -> None:
         event_list.append(lambda: on_error(message))
@@ -255,10 +255,10 @@ def gui_init_diagrams(ui: Ui_main_window,
             custom_data_window.setEnabled(False)
             if index <= 0:
                 # noinspection PyStatementEffect,PyUnresolvedReferences
-                custom_data_window.setToolTip("Station not selected")
+                custom_data_window.setToolTip("Station isn't selected")
             else:
                 # noinspection PyStatementEffect,PyUnresolvedReferences
-                custom_data_window.setToolTip("For this station isn't data trained")
+                custom_data_window.setToolTip("Data isn't trained for this station")
 
         if index <= 0:
             select_period_type_combo_box.setCurrentIndex(0)
@@ -267,7 +267,7 @@ def gui_init_diagrams(ui: Ui_main_window,
             last_station_id = ""
             clean_anomaly_observation(select_observation_for_anomaly_combo_box)
             select_observation_for_anomaly_combo_box.setEnabled(False)
-            select_observation_for_anomaly_combo_box.setToolTip("Station not selected")
+            select_observation_for_anomaly_combo_box.setToolTip("Station isn't selected")
         else:
             station_id = get_station_id()
             if station_id != last_station_id:
@@ -301,17 +301,17 @@ def gui_init_diagrams(ui: Ui_main_window,
 
         is_custom_data_window_open = True
         custom_data_push_button.setEnabled(False)
-        custom_data_push_button.setToolTip("Custom data window already open")
+        custom_data_push_button.setToolTip("Custom data window is already open")
 
         if is_loading:
             custom_data_window.setEnabled(False)
             custom_data_window.setToolTip("Data is loading now")
         elif last_station_id == "":
             custom_data_window.setEnabled(False)
-            custom_data_window.setToolTip("Station not selected")
+            custom_data_window.setToolTip("Station isn't selected")
         elif not is_trained:
             custom_data_window.setEnabled(False)
-            custom_data_window.setToolTip("For this station isn't data trained")
+            custom_data_window.setToolTip("Data isn't trained for this station")
 
     def close_listener() -> None:
         if is_custom_data_window_open:

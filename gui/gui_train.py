@@ -48,7 +48,7 @@ def gui_init_train(ui: Ui_main_window,
 
         if station_id == "(None)" or station_id == "":
             train_push_button.setEnabled(False)
-            train_push_button.setToolTip("Station not selected")
+            train_push_button.setToolTip("Station isn't selected")
         else:
             is_busy, tooltip = is_busy_by(station_id, is_train=True)
             if is_busy:

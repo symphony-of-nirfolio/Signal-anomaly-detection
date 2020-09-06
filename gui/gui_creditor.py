@@ -22,7 +22,7 @@ def gui_init_creditor(ui: Ui_main_window) -> Callable[[], None]:
         nonlocal is_creditor_window_open, creditor_window
         is_creditor_window_open = True
         action_creditor.setEnabled(False)
-        action_creditor.setToolTip("Creditor window already open")
+        action_creditor.setToolTip("Creditor window is already open")
 
         creditor_window = WindowWithCloseListener(on_creditor_window_close)
         creditor_ui = Ui_creditor_window()

@@ -267,7 +267,7 @@
           </font>
          </property>
          <property name="toolTip">
-          <string>Station not selected</string>
+          <string>Station isn't selected</string>
          </property>
          <property name="text">
           <string>Train</string>
@@ -600,7 +600,7 @@
             </font>
            </property>
            <property name="toolTip">
-            <string>Station not selected</string>
+            <string>Station isn't selected</string>
            </property>
            <item>
             <property name="text">
