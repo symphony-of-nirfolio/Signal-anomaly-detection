@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThreadPool
@@ -15,7 +15,7 @@ def gui_init_data_extraction(ui: Ui_main_window,
                              thread_pool: QThreadPool,
                              stations_info: dict,
                              set_busy_by: Callable[..., None],
-                             is_busy_by: Callable[..., bool],
+                             is_busy_by: Callable[..., Tuple[bool, str]],
                              on_extract_finished: list,
                              play_finish_notification: Callable[[], None],
                              play_error_notification: Callable[[], None]) -> Callable[[], None]:
@@ -35,22 +35,29 @@ def gui_init_data_extraction(ui: Ui_main_window,
     def update_enabled_push_buttons() -> None:
         if is_extracting_data:
             extract_data_push_button.setEnabled(False)
+            extract_data_push_button.setToolTip("Data is extracting now")
             return
 
         if is_current_station_id_in_stations_info():
             station_id = get_station_id()
-            if is_busy_by(station_id, is_data_extract=True):
+            is_busy, tooltip = is_busy_by(station_id, is_data_extract=True)
+            if is_busy:
                 extract_data_push_button.setEnabled(False)
+                extract_data_push_button.setToolTip(tooltip)
             else:
                 extract_data_push_button.setEnabled(True)
+                extract_data_push_button.setToolTip(None)
         else:
             extract_data_push_button.setEnabled(True)
+            extract_data_push_button.setToolTip(None)
 
     def lock_components() -> None:
         station_id_line_edit.setEnabled(False)
+        station_id_line_edit.setToolTip("Data is extracting now")
 
     def unlock_components() -> None:
         station_id_line_edit.setEnabled(True)
+        station_id_line_edit.setToolTip(None)
 
     def on_extract_data_started() -> None:
         nonlocal is_extracting_data

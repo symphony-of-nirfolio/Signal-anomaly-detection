@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_main_window(object):
     def setupUi(self, main_window):
         main_window.setObjectName("main_window")
-        main_window.resize(1342, 692)
+        main_window.resize(1342, 715)
         self.centralwidget = QtWidgets.QWidget(main_window)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.centralwidget)
@@ -319,6 +319,7 @@ class Ui_main_window(object):
         self.site_text_label.setText(_translate("main_window", "Site:"))
         self.site_hyperlink_label.setText(_translate("main_window", "<a href=\"https://gis.ncdc.noaa.gov/maps/ncei/cdo/daily\">gis.ncdc.noaa.gov</a>"))
         self.training_status_text_label.setText(_translate("main_window", "Training status:"))
+        self.train_push_button.setToolTip(_translate("main_window", "Station isn't selected"))
         self.train_push_button.setText(_translate("main_window", "Train"))
         self.usa_tutorial_push_button.setText(_translate("main_window", "Tutorial for USA country"))
         self.all_other_tutorial_push_button.setText(_translate("main_window", "Tutorial for All other countries"))
@@ -336,6 +337,7 @@ class Ui_main_window(object):
         self.diagrams_label.setText(_translate("main_window", "Diagrams"))
         self.station_id_label_3.setText(_translate("main_window", "Station ID"))
         self.select_station_id_for_diagram_combo_box.setItemText(0, _translate("main_window", "(None)"))
+        self.select_observation_for_anomaly_combo_box.setToolTip(_translate("main_window", "Station isn't selected"))
         self.select_observation_for_anomaly_combo_box.setItemText(0, _translate("main_window", "(None)"))
         self.select_period_type_label_2.setText(_translate("main_window", "Select observation for anomaly"))
         self.load_status_text_label.setText(_translate("main_window", "Load status:"))

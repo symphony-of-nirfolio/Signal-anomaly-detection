@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThreadPool
@@ -17,7 +17,7 @@ def gui_init_train(ui: Ui_main_window,
                    thread_pool: QThreadPool,
                    stations_info: dict,
                    set_busy_by: Callable[..., None],
-                   is_busy_by: Callable[..., bool],
+                   is_busy_by: Callable[..., Tuple[bool, str]],
                    play_finish_notification: Callable[[], None],
                    play_error_notification: Callable[[], None]) -> (Callable[[], None], Callable[[], None]):
     select_station_id_for_training_combo_box = ui.select_station_id_for_training_combo_box
@@ -41,25 +41,34 @@ def gui_init_train(ui: Ui_main_window,
     def update_enabled_train_button() -> None:
         if is_training:
             train_push_button.setEnabled(False)
+            train_push_button.setToolTip("Model is training now")
             return
 
         station_id = get_station_id()
 
         if station_id == "(None)" or station_id == "":
             train_push_button.setEnabled(False)
+            train_push_button.setToolTip("Station isn't selected")
         else:
-            if is_busy_by(station_id, is_train=True):
+            is_busy, tooltip = is_busy_by(station_id, is_train=True)
+            if is_busy:
                 train_push_button.setEnabled(False)
+                train_push_button.setToolTip(tooltip)
             else:
                 train_push_button.setEnabled(True)
+                train_push_button.setToolTip(None)
 
     def lock_components() -> None:
         select_training_observations_group_box.setEnabled(False)
+        select_training_observations_group_box.setToolTip("Model is training now")
         select_station_id_for_training_combo_box.setEnabled(False)
+        select_station_id_for_training_combo_box.setToolTip("Model is training now")
 
     def unlock_components() -> None:
         select_training_observations_group_box.setEnabled(True)
+        select_training_observations_group_box.setToolTip(None)
         select_station_id_for_training_combo_box.setEnabled(True)
+        select_station_id_for_training_combo_box.setToolTip(None)
 
     def on_train_started() -> None:
         nonlocal is_training
@@ -156,6 +165,8 @@ def gui_init_train(ui: Ui_main_window,
         play_finish_notification()
 
         QApplication.alert(main_window)
+
+        train_push_button.setText("Retrain")
 
         station_id = get_station_id()
         stations_info[station_id]["is_trained"] = True

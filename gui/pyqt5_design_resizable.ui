@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1342</width>
-    <height>692</height>
+    <height>715</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -265,6 +265,9 @@
           <font>
            <pointsize>12</pointsize>
           </font>
+         </property>
+         <property name="toolTip">
+          <string>Station isn't selected</string>
          </property>
          <property name="text">
           <string>Train</string>
@@ -595,6 +598,9 @@
             <font>
              <pointsize>12</pointsize>
             </font>
+           </property>
+           <property name="toolTip">
+            <string>Station isn't selected</string>
            </property>
            <item>
             <property name="text">
