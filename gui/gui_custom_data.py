@@ -1,6 +1,8 @@
+import _thread
+import time
 from typing import Callable
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 from gui.custom_data_window import Ui_custom_data_window
 from gui.gui_diagrams_plot import remove_diagrams, show_diagram_by_month
@@ -20,6 +22,29 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
     diagram_vertical_layout = ui.diagram_vertical_layout
     min_temperature_double_spin_box = ui.min_temperature_double_spin_box
     max_temperature_double_spin_box = ui.max_temperature_double_spin_box
+
+    event_list = []
+
+    def run_event() -> None:
+        if len(event_list) > 0:
+            function = event_list[0]
+            function()
+
+            event_list.pop(0)
+
+    event_list_runner = QtCore.QTimer(window)
+    # noinspection PyUnresolvedReferences
+    event_list_runner.timeout.connect(run_event)
+    event_list_runner.start(10)
+
+    need_update_diagram = False
+    need_work = True
+
+    can_draw_status = False
+    calculation_status = ["Calculation", "Calculation.", "Calculation..", "Calculation..."]
+    current_index = 0
+
+    calculate_status_label = None
 
     value_sliders = []
 
@@ -84,33 +109,8 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
         return data
 
     def update_diagram() -> None:
-        remove_diagrams(diagram_vertical_layout)
-
-        data = get_data_from_sliders()
-        season = get_season()
-        anomaly_text = get_anomaly_text()
-        if len(data) == 0 or season == -1 or anomaly_text == "none":
-            return
-
-        anomaly_data = get_anomaly_from_data(data, anomaly_text, season)
-
-        min_max_average_tuple = (False, False, False)
-        if anomaly_text == "min":
-            min_max_average_tuple = (True, False, False)
-        if anomaly_text == "max":
-            min_max_average_tuple = (False, True, False)
-        if anomaly_text == "average":
-            min_max_average_tuple = (False, False, True)
-
-        show_diagram_by_month(window,
-                              diagram_vertical_layout,
-                              data,
-                              anomaly_data,
-                              anomaly_text,
-                              "Custom Data",
-                              min_max_average_tuple[0],
-                              min_max_average_tuple[1],
-                              min_max_average_tuple[2])
+        nonlocal need_update_diagram
+        need_update_diagram = True
 
     def reset_sliders(need_save_value: bool) -> None:
         nonlocal value_sliders, current_min_limit, current_max_limit
@@ -180,6 +180,102 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
 
     def on_reset_push_button_clicked() -> None:
         reset_sliders(False)
+
+    def draw_current_status() -> None:
+        nonlocal calculate_status_label
+
+        if not can_draw_status:
+            return
+
+        if calculate_status_label is None:
+            remove_diagrams(diagram_vertical_layout)
+
+            calculate_status_label = QtWidgets.QLabel()
+            calculate_status_label.setGeometry(QtCore.QRect(10, 280, 321, 31))
+            font = QtGui.QFont()
+            font.setPointSize(12)
+            calculate_status_label.setFont(font)
+            calculate_status_label.setAlignment(QtCore.Qt.AlignCenter)
+            diagram_vertical_layout.addWidget(calculate_status_label)
+
+        # noinspection PyUnresolvedReferences
+        calculate_status_label.setText(calculation_status[current_index])
+
+    def calculating_status_updater() -> None:
+        nonlocal current_index
+
+        while need_work:
+            if can_draw_status:
+                event_list.append(draw_current_status)
+
+            current_index += 1
+            if current_index == len(calculation_status) - 1:
+                current_index = 0
+
+            time.sleep(0.5)
+
+    def diagram_update() -> None:
+        nonlocal need_update_diagram, can_draw_status, calculate_status_label
+
+        while need_work:
+            if need_update_diagram:
+                need_update_diagram = False
+
+                if not can_draw_status:
+                    def remove_diagrams_and_set_status_label_to_none() -> None:
+                        nonlocal calculate_status_label
+                        calculate_status_label = None
+
+                        remove_diagrams(diagram_vertical_layout)
+
+                    event_list.append(remove_diagrams_and_set_status_label_to_none)
+
+                data = get_data_from_sliders()
+                season = get_season()
+                anomaly_text = get_anomaly_text()
+                if len(data) == 0 or season == -1 or anomaly_text == "none":
+                    continue
+
+                def start_calculate_status() -> None:
+                    nonlocal can_draw_status
+                    can_draw_status = True
+                    draw_current_status()
+
+                event_list.append(start_calculate_status)
+
+                anomaly_data = get_anomaly_from_data(data, anomaly_text, season)
+
+                if need_update_diagram:
+                    continue
+
+                min_max_average_tuple = (False, False, False)
+                if anomaly_text == "min":
+                    min_max_average_tuple = (True, False, False)
+                if anomaly_text == "max":
+                    min_max_average_tuple = (False, True, False)
+                if anomaly_text == "average":
+                    min_max_average_tuple = (False, False, True)
+
+                def show_diagram_by_month_and_finish_calculate_status() -> None:
+                    nonlocal can_draw_status, calculate_status_label
+                    can_draw_status = False
+                    calculate_status_label = None
+                    remove_diagrams(diagram_vertical_layout)
+                    show_diagram_by_month(window,
+                                          diagram_vertical_layout,
+                                          data,
+                                          anomaly_data,
+                                          anomaly_text,
+                                          "Custom Data",
+                                          min_max_average_tuple[0],
+                                          min_max_average_tuple[1],
+                                          min_max_average_tuple[2])
+
+                event_list.append(show_diagram_by_month_and_finish_calculate_status)
+            time.sleep(0.1)
+
+    _thread.start_new_thread(diagram_update, ())
+    _thread.start_new_thread(calculating_status_updater, ())
 
     reset_push_button.clicked.connect(on_reset_push_button_clicked)
     update_limits_push_button.clicked.connect(on_update_limits_push_button_clicked)
