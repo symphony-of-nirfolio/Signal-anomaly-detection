@@ -1,5 +1,6 @@
 import _thread
 import random
+import time
 from typing import Callable
 
 import pygame
@@ -23,7 +24,6 @@ def audio_manager() -> (Callable[[], None],
 
     is_music_switcher_running = True
     need_play_next_music = True
-    music_switcher = None
 
     audio_info = get_audio_info_from_json()
 
@@ -65,6 +65,7 @@ def audio_manager() -> (Callable[[], None],
 
                 if event.type == music_ended and need_play_next_music:
                     play_random_music()
+            time.sleep(0.5)
 
     def play_finish_notification() -> None:
         pygame.mixer.Channel(1).play(pygame.mixer.Sound(_audio_source_path + "finish_notification.wav"))
