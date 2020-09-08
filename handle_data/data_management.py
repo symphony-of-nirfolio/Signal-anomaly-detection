@@ -1,6 +1,6 @@
-import _thread
 import os
 import json
+import threading
 import time
 from typing import Callable, Tuple
 
@@ -260,20 +260,31 @@ def get_stations_data_from_file(stations_info: dict,
                                 on_status_changed: Callable[[str], None],
                                 on_finished:
                                 Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> None:
+    is_loading_lock = threading.Lock()
     is_loading = True
-    current_index = 0
     statuses = ["Loading", "Loading.", "Loading..", "Loading..."]
 
     def status_update():
-        nonlocal current_index
+        current_index = 0
+
+        is_loading_lock.acquire()
         while is_loading:
+            is_loading_lock.release()
+
             on_status_changed(statuses[current_index])
-            time.sleep(0.5)
+
             current_index += 1
             if current_index == len(statuses):
                 current_index = 0
 
-    _thread.start_new_thread(status_update, ())
+            time.sleep(0.5)
+
+            is_loading_lock.acquire()
+
+        is_loading_lock.release()
+
+    status_updater = threading.Thread(target=status_update)
+    status_updater.start()
 
     # noinspection PyBroadException
     try:
@@ -282,7 +293,16 @@ def get_stations_data_from_file(stations_info: dict,
                                          on_status_changed,
                                          on_finished)
     except:
+        is_loading_lock.acquire()
         is_loading = False
+        is_loading_lock.release()
+
+        status_updater.join()
+
         on_error("Load crashed")
 
+    is_loading_lock.acquire()
     is_loading = False
+    is_loading_lock.release()
+
+    status_updater.join()

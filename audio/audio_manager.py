@@ -1,5 +1,5 @@
-import _thread
 import random
+import threading
 import time
 from typing import Callable
 
@@ -22,7 +22,11 @@ def audio_manager() -> (Callable[[], None],
     musics_count = 5
     last_music_index = -1
 
+    music_switcher = None
+
+    is_music_switcher_running_lock = threading.Lock()
     is_music_switcher_running = True
+    need_play_next_music_lock = threading.Lock()
     need_play_next_music = True
 
     audio_info = get_audio_info_from_json()
@@ -57,15 +61,30 @@ def audio_manager() -> (Callable[[], None],
     def music_switch() -> None:
         nonlocal is_music_switcher_running
 
+        is_music_switcher_running_lock.acquire()
         while is_music_switcher_running:
+            is_music_switcher_running_lock.release()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    is_music_switcher_running_lock.acquire()
                     is_music_switcher_running = False
+                    is_music_switcher_running_lock.release()
+
                     pygame.quit()
+
+                need_play_next_music_lock.acquire()
 
                 if event.type == music_ended and need_play_next_music:
                     play_random_music()
+
+                need_play_next_music_lock.release()
+
             time.sleep(0.5)
+
+            is_music_switcher_running_lock.acquire()
+
+        is_music_switcher_running_lock.release()
 
     def play_finish_notification() -> None:
         pygame.mixer.Channel(1).play(pygame.mixer.Sound(_audio_source_path + "finish_notification.wav"))
@@ -104,10 +123,19 @@ def audio_manager() -> (Callable[[], None],
 
     def close_listener() -> None:
         nonlocal need_play_next_music, is_music_switcher_running
-        need_play_next_music = False
-        is_music_switcher_running = False
 
-    _thread.start_new_thread(music_switch, ())
+        need_play_next_music_lock.acquire()
+        need_play_next_music = False
+        need_play_next_music_lock.release()
+
+        is_music_switcher_running_lock.acquire()
+        is_music_switcher_running = False
+        is_music_switcher_running_lock.release()
+
+        music_switcher.join()
+
+    music_switcher = threading.Thread(target=music_switch)
+    music_switcher.start()
 
     play_random_music()
 

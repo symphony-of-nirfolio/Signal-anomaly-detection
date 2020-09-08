@@ -1,3 +1,4 @@
+import queue
 from typing import Callable, Tuple
 
 from PyQt5 import QtWidgets
@@ -13,7 +14,7 @@ from handle_data.handle_neural_network import train_model
 
 def gui_init_train(ui: Ui_main_window,
                    main_window: QtWidgets.QMainWindow,
-                   event_list: list,
+                   event_list: queue.Queue,
                    thread_pool: QThreadPool,
                    stations_info: dict,
                    set_busy_by: Callable[..., None],
@@ -178,13 +179,13 @@ def gui_init_train(ui: Ui_main_window,
         write_stations_info_to_json(stations_info)
 
     def on_error_to_event_list(message: str) -> None:
-        event_list.append(lambda: on_error(message))
+        event_list.put(lambda: on_error(message))
 
     def on_status_changed_to_event_list(status: str) -> None:
-        event_list.append(lambda: on_status_changed(status))
+        event_list.put(lambda: on_status_changed(status))
 
     def on_finished_to_event_list(need_min: bool, need_max: bool, need_average: bool) -> None:
-        event_list.append(lambda: on_finished(need_min, need_max, need_average))
+        event_list.put(lambda: on_finished(need_min, need_max, need_average))
 
     def on_train_push_button_clicked() -> None:
         on_train_started()

@@ -1,4 +1,5 @@
-import _thread
+import queue
+import threading
 import time
 from typing import Callable
 
@@ -23,27 +24,34 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
     min_temperature_double_spin_box = ui.min_temperature_double_spin_box
     max_temperature_double_spin_box = ui.max_temperature_double_spin_box
 
-    event_list = []
+    event_list = queue.Queue(maxsize=16)
 
     def run_event() -> None:
-        if len(event_list) > 0:
-            function = event_list[0]
+        if not event_list.empty():
+            function = event_list.get()
             function()
 
-            event_list.pop(0)
+            event_list.task_done()
 
     event_list_runner = QtCore.QTimer(window)
     # noinspection PyUnresolvedReferences
     event_list_runner.timeout.connect(run_event)
     event_list_runner.start(10)
 
+    diagram_updater = None
+    calculating_status_updater = None
+
+    need_update_diagram_lock = threading.Lock()
     need_update_diagram = False
+    need_work_lock = threading.Lock()
     need_work = True
 
+    can_draw_status_lock = threading.Lock()
     can_draw_status = False
     calculation_status = ["Calculation", "Calculation.", "Calculation..", "Calculation..."]
     current_index = 0
 
+    calculate_status_label_lock = threading.Lock()
     calculate_status_label = None
 
     value_sliders = []
@@ -110,7 +118,10 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
 
     def update_diagram() -> None:
         nonlocal need_update_diagram
+
+        need_update_diagram_lock.acquire()
         need_update_diagram = True
+        need_update_diagram_lock.release()
 
     def reset_sliders(need_save_value: bool) -> None:
         nonlocal value_sliders, current_min_limit, current_max_limit
@@ -184,9 +195,13 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
     def draw_current_status() -> None:
         nonlocal calculate_status_label
 
+        can_draw_status_lock.acquire()
         if not can_draw_status:
+            can_draw_status_lock.release()
             return
+        can_draw_status_lock.release()
 
+        calculate_status_label_lock.acquire()
         if calculate_status_label is None:
             remove_diagrams(diagram_vertical_layout)
 
@@ -200,13 +215,19 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
 
         # noinspection PyUnresolvedReferences
         calculate_status_label.setText(calculation_status[current_index])
+        calculate_status_label_lock.release()
 
-    def calculating_status_updater() -> None:
+    def calculating_status_update() -> None:
         nonlocal current_index
 
+        need_work_lock.acquire()
         while need_work:
+            need_work_lock.release()
+
+            can_draw_status_lock.acquire()
             if can_draw_status:
-                event_list.append(draw_current_status)
+                event_list.put(draw_current_status)
+            can_draw_status_lock.release()
 
             current_index += 1
             if current_index == len(calculation_status) - 1:
@@ -214,39 +235,66 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
 
             time.sleep(0.5)
 
+            need_work_lock.acquire()
+
+        need_work_lock.release()
+
     def diagram_update() -> None:
         nonlocal need_update_diagram, can_draw_status, calculate_status_label
 
+        need_work_lock.acquire()
         while need_work:
+            need_work_lock.release()
+
+            need_update_diagram_lock.acquire()
             if need_update_diagram:
                 need_update_diagram = False
+                need_update_diagram_lock.release()
 
+                can_draw_status_lock.acquire()
                 if not can_draw_status:
+                    can_draw_status_lock.release()
+
                     def remove_diagrams_and_set_status_label_to_none() -> None:
                         nonlocal calculate_status_label
+
+                        calculate_status_label_lock.acquire()
                         calculate_status_label = None
+                        calculate_status_label_lock.release()
 
                         remove_diagrams(diagram_vertical_layout)
 
-                    event_list.append(remove_diagrams_and_set_status_label_to_none)
+                    event_list.put(remove_diagrams_and_set_status_label_to_none)
+                else:
+                    can_draw_status_lock.release()
 
                 data = get_data_from_sliders()
                 season = get_season()
                 anomaly_text = get_anomaly_text()
                 if len(data) == 0 or season == -1 or anomaly_text == "none":
+                    need_work_lock.acquire()
                     continue
 
                 def start_calculate_status() -> None:
                     nonlocal can_draw_status
+
+                    can_draw_status_lock.acquire()
                     can_draw_status = True
+                    can_draw_status_lock.release()
+
                     draw_current_status()
 
-                event_list.append(start_calculate_status)
+                event_list.put(start_calculate_status)
 
                 anomaly_data = get_anomaly_from_data(data, anomaly_text, season)
 
+                need_update_diagram_lock.acquire()
                 if need_update_diagram:
+                    need_update_diagram_lock.release()
+
+                    need_work_lock.acquire()
                     continue
+                need_update_diagram_lock.release()
 
                 min_max_average_tuple = (False, False, False)
                 if anomaly_text == "min":
@@ -258,8 +306,15 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
 
                 def show_diagram_by_month_and_finish_calculate_status() -> None:
                     nonlocal can_draw_status, calculate_status_label
+
+                    can_draw_status_lock.acquire()
                     can_draw_status = False
+                    can_draw_status_lock.release()
+
+                    calculate_status_label_lock.acquire()
                     calculate_status_label = None
+                    calculate_status_label_lock.release()
+
                     remove_diagrams(diagram_vertical_layout)
                     show_diagram_by_month(window,
                                           diagram_vertical_layout,
@@ -271,11 +326,31 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
                                           min_max_average_tuple[1],
                                           min_max_average_tuple[2])
 
-                event_list.append(show_diagram_by_month_and_finish_calculate_status)
+                event_list.put(show_diagram_by_month_and_finish_calculate_status)
+            else:
+                need_update_diagram_lock.release()
+
             time.sleep(0.1)
 
-    _thread.start_new_thread(diagram_update, ())
-    _thread.start_new_thread(calculating_status_updater, ())
+            need_work_lock.acquire()
+
+        need_work_lock.release()
+
+    def close_listener() -> None:
+        nonlocal need_work
+
+        need_work_lock.acquire()
+        need_work = False
+        need_work_lock.release()
+
+        diagram_updater.join()
+        calculating_status_updater.join()
+
+    diagram_updater = threading.Thread(target=diagram_update)
+    calculating_status_updater = threading.Thread(target=calculating_status_update)
+
+    diagram_updater.start()
+    calculating_status_updater.start()
 
     reset_push_button.clicked.connect(on_reset_push_button_clicked)
     update_limits_push_button.clicked.connect(on_update_limits_push_button_clicked)
@@ -285,4 +360,4 @@ def gui_init_custom_data(ui: Ui_custom_data_window,
     min_temperature_double_spin_box.valueChanged.connect(on_limits_value_changed)
     max_temperature_double_spin_box.valueChanged.connect(on_limits_value_changed)
 
-    return observation_combo_box
+    return observation_combo_box, close_listener

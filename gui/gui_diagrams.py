@@ -1,3 +1,4 @@
+import queue
 from typing import Callable, Tuple
 
 from PyQt5 import QtWidgets
@@ -16,7 +17,7 @@ from handle_data.data_management import get_stations_data_from_file
 
 def gui_init_diagrams(ui: Ui_main_window,
                       main_window: QtWidgets.QMainWindow,
-                      event_list: list,
+                      event_list: queue.Queue,
                       thread_pool: QThreadPool,
                       stations_info: dict,
                       set_busy_by: Callable[..., None],
@@ -46,6 +47,7 @@ def gui_init_diagrams(ui: Ui_main_window,
     custom_data_window = None
     custom_data_ui = None
     custom_data_observation_for_anomaly_combo_box = None
+    custom_data_close_listener = None
 
     is_custom_data_window_open = False
 
@@ -214,16 +216,16 @@ def gui_init_diagrams(ui: Ui_main_window,
                 custom_data_window.setToolTip("Data isn't trained for this station")
 
     def on_error_to_event_list(message: str) -> None:
-        event_list.append(lambda: on_error(message))
+        event_list.put(lambda: on_error(message))
 
     def on_status_changed_to_event_list(status: str) -> None:
-        event_list.append(lambda: on_status_changed(status))
+        event_list.put(lambda: on_status_changed(status))
 
     def on_finished_to_event_list(loaded_data: dict,
                                   loaded_anomaly_data: dict,
                                   loaded_is_trained: bool,
                                   loaded_trained_on: (bool, bool, bool)) -> None:
-        event_list.append(lambda: on_finished(loaded_data, loaded_anomaly_data, loaded_is_trained, loaded_trained_on))
+        event_list.put(lambda: on_finished(loaded_data, loaded_anomaly_data, loaded_is_trained, loaded_trained_on))
 
     def update_diagram() -> None:
         pass
@@ -281,6 +283,10 @@ def gui_init_diagrams(ui: Ui_main_window,
     def on_custom_data_window_closed():
         nonlocal is_custom_data_window_open, custom_data_observation_for_anomaly_combo_box
         is_custom_data_window_open = False
+
+        # noinspection PyCallingNonCallable
+        custom_data_close_listener()
+
         custom_data_observation_for_anomaly_combo_box = None
 
         custom_data_push_button.setEnabled(True)
@@ -288,12 +294,13 @@ def gui_init_diagrams(ui: Ui_main_window,
 
     def on_custom_data_push_button_clicked():
         nonlocal custom_data_window, custom_data_ui, is_custom_data_window_open,\
-            custom_data_observation_for_anomaly_combo_box
+            custom_data_observation_for_anomaly_combo_box, custom_data_close_listener
         custom_data_window = WindowWithCloseListener(on_custom_data_window_closed)
         custom_data_ui = Ui_custom_data_window()
         custom_data_ui.setupUi(custom_data_window)
 
-        custom_data_observation_for_anomaly_combo_box = gui_init_custom_data(custom_data_ui, custom_data_window)
+        custom_data_observation_for_anomaly_combo_box, custom_data_close_listener =\
+            gui_init_custom_data(custom_data_ui, custom_data_window)
         if is_valid_station_id():
             reset_anomaly_observation(get_station_id(), custom_data_observation_for_anomaly_combo_box)
 
