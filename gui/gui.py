@@ -1,3 +1,4 @@
+import queue
 import sys
 
 from PyQt5 import QtWidgets, QtCore
@@ -35,14 +36,14 @@ def main_ui() -> None:
     close_listeners.append(audio_manager_close_listener)
 
     thread_pool = QThreadPool()
-    event_list = []
+    event_list = queue.Queue(maxsize=16)
 
     def run_event() -> None:
-        if len(event_list) > 0:
-            function = event_list[0]
+        if not event_list.empty():
+            function = event_list.get()
             function()
 
-            event_list.pop(0)
+            event_list.task_done()
 
     event_list_runner = QtCore.QTimer()
     # noinspection PyUnresolvedReferences

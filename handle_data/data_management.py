@@ -1,6 +1,6 @@
-import _thread
 import os
 import json
+import threading
 import time
 from typing import Callable, Tuple
 
@@ -139,11 +139,17 @@ def _info_list_to_value_list(data: list) -> list:
     return value_list
 
 
-def save_data_to_file(data: dict, path: str) -> None:
-    converted_data = {}
+def _info_dict_to_value_dict(data: dict) -> dict:
+    value_data = {}
 
     for key in data:
-        converted_data[key] = _info_list_to_value_list(data[key])
+        value_data[key] = _info_list_to_value_list(data[key])
+
+    return value_data
+
+
+def save_data_to_file(data: dict, path: str) -> None:
+    converted_data = _info_dict_to_value_dict(data)
 
     _save_to_json_file(path, converted_data)
 
@@ -241,9 +247,29 @@ def _try_get_stations_data_from_file(stations_info: dict,
         need_to_load_anomaly_data = False
 
     if need_to_load_anomaly_data:
-        for key in data:
-            month = int(key[-2:])
-            _calculate_anomaly_data(data[key], key, month, anomaly_data, trained_on, prediction)
+        value_data = _info_dict_to_value_dict(data)
+
+        raw_anomaly_data = prediction.get_result_multiple(value_data, trained_on)
+
+        for key in raw_anomaly_data:
+            info_list = _value_list_to_info_list(raw_anomaly_data[key][0])
+            offset = 0
+
+            anomaly_data[key] = {}
+
+            if trained_on[0]:
+                anomaly_data[key]["min"] = (_get_value_list_from_data(info_list, "min").tolist(),
+                                            int(raw_anomaly_data[key][1][offset]))
+                offset += 1
+
+            if trained_on[1]:
+                anomaly_data[key]["max"] = (_get_value_list_from_data(info_list, "max").tolist(),
+                                            int(raw_anomaly_data[key][1][offset]))
+                offset += 1
+
+            if trained_on[2]:
+                anomaly_data[key]["average"] = (_get_value_list_from_data(info_list, "average").tolist(),
+                                                int(raw_anomaly_data[key][1][offset]))
 
         _save_to_json_file(_get_file_path_for_cashed_file_anomaly_data(station_id), anomaly_data)
         stations_info[station_id]["is_cashed_anomaly_data"] = True
@@ -260,20 +286,31 @@ def get_stations_data_from_file(stations_info: dict,
                                 on_status_changed: Callable[[str], None],
                                 on_finished:
                                 Callable[[dict, dict, bool, Tuple[bool, bool, bool]], None]) -> None:
+    is_loading_lock = threading.Lock()
     is_loading = True
-    current_index = 0
     statuses = ["Loading", "Loading.", "Loading..", "Loading..."]
 
     def status_update():
-        nonlocal current_index
+        current_index = 0
+
+        is_loading_lock.acquire()
         while is_loading:
+            is_loading_lock.release()
+
             on_status_changed(statuses[current_index])
-            time.sleep(0.5)
+
             current_index += 1
             if current_index == len(statuses):
                 current_index = 0
 
-    _thread.start_new_thread(status_update, ())
+            time.sleep(0.5)
+
+            is_loading_lock.acquire()
+
+        is_loading_lock.release()
+
+    status_updater = threading.Thread(target=status_update)
+    status_updater.start()
 
     # noinspection PyBroadException
     try:
@@ -282,7 +319,16 @@ def get_stations_data_from_file(stations_info: dict,
                                          on_status_changed,
                                          on_finished)
     except:
+        is_loading_lock.acquire()
         is_loading = False
+        is_loading_lock.release()
+
+        status_updater.join()
+
         on_error("Load crashed")
 
+    is_loading_lock.acquire()
     is_loading = False
+    is_loading_lock.release()
+
+    status_updater.join()

@@ -1,3 +1,4 @@
+import queue
 from typing import Callable, Tuple
 
 from PyQt5 import QtWidgets
@@ -11,7 +12,7 @@ from handle_data.handle_data import handle_data_to_files
 
 def gui_init_data_extraction(ui: Ui_main_window,
                              main_window: QtWidgets.QMainWindow,
-                             event_list: list,
+                             event_list: queue.Queue,
                              thread_pool: QThreadPool,
                              stations_info: dict,
                              set_busy_by: Callable[..., None],
@@ -110,13 +111,13 @@ def gui_init_data_extraction(ui: Ui_main_window,
         update_station_id_push_buttons()
 
     def on_error_to_event_list(message: str) -> None:
-        event_list.append(lambda: on_error(message))
+        event_list.put(lambda: on_error(message))
 
     def on_status_changed_to_event_list(status: str) -> None:
-        event_list.append(lambda: on_status_changed(status))
+        event_list.put(lambda: on_status_changed(status))
 
     def on_finished_to_event_list() -> None:
-        event_list.append(lambda: on_finished())
+        event_list.put(lambda: on_finished())
 
     def on_extract_data_push_button_click() -> None:
         on_extract_data_started()
