@@ -137,14 +137,12 @@ class Prediction:
 
             return split_data, split_year
 
-        all_counter = 0
         months = _SEASON_TO_MONTHS[season]
         if season == 0:
             months = ('01', '02')
         concat = np.empty(0)
         year_concat = np.empty(0)
         prev_year = -1
-        count = 0
         for year in data:
             merged = np.empty(0)
             merged_year_arr = np.empty(0)
@@ -203,7 +201,6 @@ class Prediction:
                     else:
                         ans_for_month = np.append(ans_for_month, data_results[current_pos])
                         current_pos += 1
-                # print(len(ans_for_month))
 
                 temp = ans_for_month[ans_for_month < 10000]
                 self._predict_result[col][season][year][month] = (ans_for_month, self._get_color(temp))

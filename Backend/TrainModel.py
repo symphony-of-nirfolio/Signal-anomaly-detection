@@ -1,8 +1,8 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D, Flatten, Dropout, UpSampling1D
-from keras.models import Model, Sequential
+from keras.layers import Conv1D, MaxPooling1D, UpSampling1D
+from keras.models import Sequential
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from Backend.CustomGenerator import SequenceGenerator
 
@@ -72,11 +72,9 @@ def _rid_of_anomalies(data, path_to_nn, station, col, season):
     max_value = res['caps'][1].get_data()[0][0]
     plt.clf()
     plt.close()
-    # plt.show()
     data = data[data >= min_value]
     data = data[data <= max_value]
     data = np.array([(item - min_season_value)/(max_season_value - min_season_value)*2 - 1 for item in data])
-    # print(min(data), max(data))
 
     file = open(path_to_nn + '/' + station + '/' + _COLUMN_TO_STR[col] + '/nn_range', 'a')
     if season == 3:
@@ -112,13 +110,7 @@ def _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_sav
 
 def _create_model():
     model = Sequential()
-    '''
-    model.add(Conv1D(filters=4, kernel_size=5, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
-    model.add(MaxPooling1D(4))
-    model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh'))
-    model.add(GlobalMaxPool1D())
-    model.add(Dense(units=_IN_X, activation='tanh'))
-    '''
+
     model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
     model.add(MaxPooling1D(2))
     model.add(Conv1D(filters=64, kernel_size=3, padding='same', activation='tanh'))
@@ -130,16 +122,7 @@ def _create_model():
     model.add(Conv1D(filters=64, kernel_size=3, padding='same', activation='tanh'))
     model.add(UpSampling1D(2))
     model.add(Conv1D(filters=1, kernel_size=3, padding='same', activation='tanh'))
-    # model.summary()
-    '''
-    model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
-    model.add(MaxPooling1D(2))
-    model.add(Conv1D(filters=16, kernel_size=3, padding='same', activation='tanh'))
-    model.add(MaxPooling1D(2))
-    model.add(Flatten())
-    model.add(Dense(units=10, activation='tanh'))
-    model.add(Dense(units=_IN_X, activation='tanh'))
-    '''
+
     return model
 
 
@@ -168,7 +151,6 @@ def _train_model_for_season(path_to_save, station_id, season, column):
     train_samples, valid_samples = _get_samples(len(data_for_learn))
     train_generator = SequenceGenerator(train_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA)
     valid_generator = SequenceGenerator(valid_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA)
-    # print(len(data_for_learn))
     early_stopper = EarlyStopping(patience=5, verbose=0)
     nn_save_path = path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[column] + '/' + str(season) + '.h5'
     check_pointer = ModelCheckpoint(nn_save_path, verbose=0, save_best_only=True)
