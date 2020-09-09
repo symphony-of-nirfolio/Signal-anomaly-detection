@@ -139,11 +139,17 @@ def _info_list_to_value_list(data: list) -> list:
     return value_list
 
 
-def save_data_to_file(data: dict, path: str) -> None:
-    converted_data = {}
+def _info_dict_to_value_dict(data: dict) -> dict:
+    value_data = {}
 
     for key in data:
-        converted_data[key] = _info_list_to_value_list(data[key])
+        value_data[key] = _info_list_to_value_list(data[key])
+
+    return value_data
+
+
+def save_data_to_file(data: dict, path: str) -> None:
+    converted_data = _info_dict_to_value_dict(data)
 
     _save_to_json_file(path, converted_data)
 
@@ -241,9 +247,29 @@ def _try_get_stations_data_from_file(stations_info: dict,
         need_to_load_anomaly_data = False
 
     if need_to_load_anomaly_data:
-        for key in data:
-            month = int(key[-2:])
-            _calculate_anomaly_data(data[key], key, month, anomaly_data, trained_on, prediction)
+        value_data = _info_dict_to_value_dict(data)
+
+        raw_anomaly_data = prediction.get_result_multiple(value_data, trained_on)
+
+        for key in raw_anomaly_data:
+            info_list = _value_list_to_info_list(raw_anomaly_data[key][0])
+            offset = 0
+
+            anomaly_data[key] = {}
+
+            if trained_on[0]:
+                anomaly_data[key]["min"] = (_get_value_list_from_data(info_list, "min").tolist(),
+                                            int(raw_anomaly_data[key][1][offset]))
+                offset += 1
+
+            if trained_on[1]:
+                anomaly_data[key]["max"] = (_get_value_list_from_data(info_list, "max").tolist(),
+                                            int(raw_anomaly_data[key][1][offset]))
+                offset += 1
+
+            if trained_on[2]:
+                anomaly_data[key]["average"] = (_get_value_list_from_data(info_list, "average").tolist(),
+                                                int(raw_anomaly_data[key][1][offset]))
 
         _save_to_json_file(_get_file_path_for_cashed_file_anomaly_data(station_id), anomaly_data)
         stations_info[station_id]["is_cashed_anomaly_data"] = True
