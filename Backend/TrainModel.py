@@ -1,7 +1,7 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D, Flatten, Dropout
+from keras.layers import Conv1D, GlobalMaxPool1D, Dense, MaxPooling1D, Flatten, Dropout, UpSampling1D
 from keras.models import Model, Sequential
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from Backend.CustomGenerator import SequenceGenerator
@@ -112,11 +112,34 @@ def _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_sav
 
 def _create_model():
     model = Sequential()
+    '''
+    model.add(Conv1D(filters=4, kernel_size=5, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
+    model.add(MaxPooling1D(4))
+    model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh'))
+    model.add(GlobalMaxPool1D())
+    model.add(Dense(units=_IN_X, activation='tanh'))
+    '''
+    model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
+    model.add(MaxPooling1D(2))
+    model.add(Conv1D(filters=64, kernel_size=3, padding='same', activation='tanh'))
+    model.add(MaxPooling1D(2))
+    model.add(Conv1D(filters=128, kernel_size=3, padding='same', activation='tanh'))
+
+    model.add(Conv1D(filters=128, kernel_size=3, padding='same', activation='tanh'))
+    model.add(UpSampling1D(2))
+    model.add(Conv1D(filters=64, kernel_size=3, padding='same', activation='tanh'))
+    model.add(UpSampling1D(2))
+    model.add(Conv1D(filters=1, kernel_size=3, padding='same', activation='tanh'))
+    # model.summary()
+    '''
     model.add(Conv1D(filters=8, kernel_size=3, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
+    model.add(MaxPooling1D(2))
+    model.add(Conv1D(filters=16, kernel_size=3, padding='same', activation='tanh'))
     model.add(MaxPooling1D(2))
     model.add(Flatten())
     model.add(Dense(units=10, activation='tanh'))
     model.add(Dense(units=_IN_X, activation='tanh'))
+    '''
     return model
 
 
