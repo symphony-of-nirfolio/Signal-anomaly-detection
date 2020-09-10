@@ -3,14 +3,11 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from Backend.CustomGenerator import SequenceGenerator
-from Backend.TrainModel import _create_model, _COLUMN_TO_STR, _SEASON_NUMBER, _COLUMNS_NUMBER, _SEASON_TO_MONTHS
+from Backend.TrainModel import _create_model_CNN, _COLUMN_TO_STR, _SEASON_NUMBER, _COLUMNS_NUMBER, _SEASON_TO_MONTHS, _create_model_LSTM
 
 import numpy as np
 import concurrent
 from threading import Lock
-
-
-_WINDOW = 14
 
 
 class Prediction:
@@ -33,11 +30,22 @@ class Prediction:
             cls._instance = cls.__new__(cls)
         return cls._instance
 
-    def _load_nn(self, path_to_nn, station, col, season):
+    def _load_nn_CNN(self, path_to_nn, station, col, season):
         self._path_to_nn = path_to_nn
         nn_file = path_to_nn + '/' + station + '/' + col + '/' + str(season) + '.h5'
         if os.path.exists(nn_file):
-            model = _create_model()
+            model = _create_model_CNN()
+            model.load_weights(nn_file)
+            model.compile(loss='mean_squared_error', optimizer='adam')
+            return model
+        else:
+            return None
+
+    def _load_nn_LSTM(self, path_to_nn, station, col, season):
+        self._path_to_nn = path_to_nn
+        nn_file = path_to_nn + '/' + station + '/' + col + '/' + str(season) + '.h5'
+        if os.path.exists(nn_file):
+            model = _create_model_LSTM()
             model.load_weights(nn_file)
             model.compile(loss='mean_squared_error', optimizer='adam')
             return model
@@ -51,7 +59,7 @@ class Prediction:
             col_str = _COLUMN_TO_STR[column]
             self._model[col_str] = {}
             for season in range(_SEASON_NUMBER):
-                self._model[col_str][season] = self._load_nn(path_to_nn, station, col_str, season)
+                self._model[col_str][season] = self._load_nn_LSTM(path_to_nn, station, col_str, season)
         self._predict_result = {}
         self._lock = Lock()
 
@@ -85,9 +93,9 @@ class Prediction:
 
         data_to_predict = self._prepare_data(data, self._path_to_nn, self._station, col, season)
         if len(data_to_predict) == 28:
-            test_generator = SequenceGenerator(np.array([0]), 1, data_to_predict, 1)
+            test_generator = SequenceGenerator(np.array([0]), 1, data_to_predict, 1, 28)
         else:
-            test_generator = SequenceGenerator(np.array([0, len(data_to_predict) - 28]), 1, data_to_predict, 1)
+            test_generator = SequenceGenerator(np.array([0, len(data_to_predict) - 28]), 1, data_to_predict, 1, 28)
 
         results = self._model[_COLUMN_TO_STR[col]][season].predict(x=test_generator,
                                                                    steps=len(test_generator),
@@ -109,31 +117,31 @@ class Prediction:
         return answer, color
 
     # concat data for neural network by lots of parts by size 28
-    def _concat_local_data(self, data, column, season):
+    def _concat_local_data(self, data, column, season, WINDOW_size):
         min_value, max_value = self._get_range(self._path_to_nn, self._station, column, season)
 
         def _rearrange_data(data_to_rearrange):
             data_to_rearrange = data_to_rearrange[data_to_rearrange < 10000]
             return np.array([(item - min_value) / (max_value - min_value) * 2 - 1 for item in data_to_rearrange])
 
-        def _split_on_28(data_to_split, year_to_split):
-            if len(data_to_split) < 28:
-                split_data = np.append(data_to_split, np.zeros(28-len(data_to_split)))
-                split_year = np.append(year_to_split, np.full((28 - len(year_to_split)), -1))
+        def _split_on_window(data_to_split, year_to_split):
+            if len(data_to_split) < WINDOW_size:
+                split_data = np.append(data_to_split, np.zeros(WINDOW_size-len(data_to_split)))
+                split_year = np.append(year_to_split, np.full((WINDOW_size - len(year_to_split)), -1))
                 return split_data, split_year
 
             split_data = np.empty(0)
             split_year = np.empty(0)
-            for i in range(len(data_to_split) // 14):
-                pos = i*14
-                if pos + 28 <= len(data_to_split):
-                    split_data = np.append(split_data, data_to_split[pos:pos + 28])
-                    split_year = np.append(split_year, year_to_split[pos:pos + 28])
-                elif pos + 14 != len(data_to_split):
+            for i in range(len(data_to_split) // (WINDOW_size // 2)):
+                pos = i * WINDOW_size // 2
+                if pos + WINDOW_size <= len(data_to_split):
+                    split_data = np.append(split_data, data_to_split[pos:pos + WINDOW_size])
+                    split_year = np.append(split_year, year_to_split[pos:pos + WINDOW_size])
+                elif pos + WINDOW_size // 2 != len(data_to_split):
                     split_data = np.append(split_data, data_to_split[pos:])
-                    split_data = np.append(split_data, np.zeros(28 - len(data_to_split) + pos))
+                    split_data = np.append(split_data, np.zeros(WINDOW_size - len(data_to_split) + pos))
                     split_year = np.append(split_year, year_to_split[pos:])
-                    split_year = np.append(split_year, np.full((28 - len(data_to_split) + pos), -1))
+                    split_year = np.append(split_year, np.full((WINDOW_size - len(data_to_split) + pos), -1))
 
             return split_data, split_year
 
@@ -154,7 +162,7 @@ class Prediction:
                 if prev_year != -1 and '12' in data[str(prev_year)]:
                     merged = _rearrange_data(data[str(prev_year)]['12'])
                     merged_year_arr = np.full((len(merged)), int(year))
-                    merged, merged_year_arr = _split_on_28(merged, merged_year_arr)
+                    merged, merged_year_arr = _split_on_window(merged, merged_year_arr)
                     concat = np.append(concat, merged)
                     year_concat = np.append(year_concat, merged_year_arr)
                     merged = np.empty(0)
@@ -167,7 +175,7 @@ class Prediction:
                     merged = np.append(merged, current_month)
                     merged_year_arr = np.append(merged_year_arr, year_arr)
 
-            merged, merged_year_arr = _split_on_28(merged, merged_year_arr)
+            merged, merged_year_arr = _split_on_window(merged, merged_year_arr)
             concat = np.append(concat, merged)
             year_concat = np.append(year_concat, merged_year_arr)
             prev_year = int(year)
@@ -206,7 +214,7 @@ class Prediction:
                 self._predict_result[col][season][year][month] = (ans_for_month, self._get_color(temp))
 
     # merge same WINDOW=14 parts
-    def _merge_same_parts(self, data_to_predict, year_to_concat, results):
+    def _merge_same_parts(self, data_to_predict, year_to_concat, results, _WINDOW):
 
         merged_predict = np.empty(0)
         merged_year = np.empty(0)
@@ -244,18 +252,33 @@ class Prediction:
 
         return merged_predict, merged_year, merged_results
 
-    # predict for season and column
-    def _predict_model_for_season(self, data, nn_model, column, season):
-        data_to_predict, year_concat = self._concat_local_data(data, column, season)
+    # predict for season and column CNN
+    def _predict_model_for_season_CNN(self, data, nn_model, column, season):
+        data_to_predict, year_concat = self._concat_local_data(data, column, season, 28)
 
-        test_generator = SequenceGenerator(range(len(data_to_predict) // 28), 1, data_to_predict, 28)
+        test_generator = SequenceGenerator(range(len(data_to_predict) // 28), 1, data_to_predict, 28, 28)
         results = nn_model.predict(x=test_generator,
                                    steps=len(test_generator),
                                    verbose=0)
 
         results = np.reshape(results, (results.shape[0], results.shape[1]))
         results = self._get_difference(data_to_predict, results)
-        data_to_predict, year_concat, results = self._merge_same_parts(data_to_predict, year_concat, results)
+        data_to_predict, year_concat, results = self._merge_same_parts(data_to_predict, year_concat, results, 14)
+
+        self._save_to_dict(data, results, column, season)
+
+    # predict for season and column LSTM
+    def _predict_model_for_season_LSTM(self, data, nn_model, column, season):
+        data_to_predict, year_concat = self._concat_local_data(data, column, season, 6)
+
+        test_generator = SequenceGenerator(range(len(data_to_predict) // 6), 1, data_to_predict, 6, 6)
+        results = nn_model.predict(x=test_generator,
+                                   steps=len(test_generator),
+                                   verbose=0)
+
+        results = np.reshape(results, (results.shape[0], results.shape[1]))
+        results = self._get_difference(data_to_predict, results)
+        data_to_predict, year_concat, results = self._merge_same_parts(data_to_predict, year_concat, results, 3)
 
         self._save_to_dict(data, results, column, season)
 
@@ -317,23 +340,45 @@ class Prediction:
             merged[key] = (temp_data, temp_color)
         return merged
 
-    # result for multiple data
-    def get_result_multiple(self, data, columns):
+    # result in CNN for multiple data
+    def _get_result_multiple_CNN(self, data, columns):
 
         splitted_data = self._split_all(data, columns)
         self._predict_result = {}
         with concurrent.futures.ThreadPoolExecutor() as executor:
             threads = []
             for season in range(_SEASON_NUMBER):
-                for column in range(_COLUMNS_NUMBER-1):
+                for column in range(_COLUMNS_NUMBER - 1):
                     if columns[column]:
-                        threads.append(executor.submit(self._predict_model_for_season,
+                        threads.append(executor.submit(self._predict_model_for_season_CNN,
                                                        splitted_data[column][season],
                                                        self._model[_COLUMN_TO_STR[column]][season],
                                                        column, season))
             concurrent.futures.wait(threads)
 
         return self._merge_all(data, columns)
+
+    # result in LSTM for multiple data
+    def _get_result_multiple_LSTM(self, data, columns):
+
+        splitted_data = self._split_all(data, columns)
+        self._predict_result = {}
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            threads = []
+            for season in range(_SEASON_NUMBER):
+                for column in range(_COLUMNS_NUMBER - 1):
+                    if columns[column]:
+                        threads.append(executor.submit(self._predict_model_for_season_LSTM,
+                                                       splitted_data[column][season],
+                                                       self._model[_COLUMN_TO_STR[column]][season],
+                                                       column, season))
+            concurrent.futures.wait(threads)
+
+        return self._merge_all(data, columns)
+
+    # result for multiple data
+    def get_result_multiple(self, data, columns):
+        return self._get_result_multiple_LSTM(data, columns)
 
     def get_red(self):
         return self._RED
