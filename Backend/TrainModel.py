@@ -1,7 +1,7 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from keras.layers import Conv1D, MaxPooling1D, UpSampling1D
+from keras.layers import Conv1D, MaxPooling1D, UpSampling1D, LSTM, RepeatVector, TimeDistributed, Dense
 from keras.models import Sequential
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from Backend.CustomGenerator import SequenceGenerator
@@ -21,11 +21,14 @@ _MIN_YEAR = 1800
 _MAX_YEAR = 2020
 _MIN_TEMPERATURE = 265
 _MAX_TEMPERATURE = 320
-_SCALE_DATA = 8
+_SCALE_DATA_CNN = 8
+_SCALE_DATA_LSTM = 6
 
 _BATCH_SIZE = 8
 _IN_X = 28
+_IN_X_LSTM = 6
 _IN_Y = 1
+_IN_Y_LSTM = 1
 _EPOCHS = 200
 
 
@@ -108,7 +111,19 @@ def _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_sav
                 _save_temp_data(path_to_save, station_id, season, col, data)
 
 
-def _create_model():
+def _create_model_LSTM():
+    model = Sequential()
+
+    model.add(LSTM(32, activation='tanh', input_shape=(_IN_X_LSTM, _IN_Y_LSTM), return_sequences=False))
+
+    model.add(RepeatVector(_IN_X_LSTM))
+    model.add(LSTM(32, activation='tanh', return_sequences=True))
+    model.add(TimeDistributed(Dense(_IN_Y_LSTM)))
+
+    return model
+
+
+def _create_model_CNN():
     model = Sequential()
 
     model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='tanh', input_shape=(_IN_X, _IN_Y)))
@@ -126,13 +141,19 @@ def _create_model():
     return model
 
 
-def _get_model():
-    model = _create_model()
+def _get_model_CNN():
+    model = _create_model_CNN()
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
 
 
-def _get_samples(dataset_len):
+def _get_model_LSTM():
+    model = _create_model_LSTM()
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
+
+
+def _get_samples_CNN(dataset_len):
     dataset_len = dataset_len//8 - 4
     all_samples = [i for i in range(dataset_len)]
     random.shuffle(all_samples)
@@ -143,14 +164,25 @@ def _get_samples(dataset_len):
     return train_samples, valid_samples
 
 
-def _train_model_for_season(path_to_save, station_id, season, column):
+def _get_samples_LSTM(dataset_len):
+    dataset_len = (dataset_len - _IN_X_LSTM)//_SCALE_DATA_LSTM
+    all_samples = [i for i in range(dataset_len)]
+    random.shuffle(all_samples)
+    train_size = (int(0.7*dataset_len)//_IN_X_LSTM//_BATCH_SIZE)*_IN_X_LSTM*_BATCH_SIZE
+    valid_size = ((dataset_len - train_size)//_IN_X_LSTM//_BATCH_SIZE)*_IN_X_LSTM*_BATCH_SIZE
+    train_samples = all_samples[:train_size]
+    valid_samples = all_samples[train_size:train_size+valid_size]
+    return train_samples, valid_samples
+
+
+def _train_model_for_season_CNN(path_to_save, station_id, season, column):
     data_for_learn = np.fromfile(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(column) + '.dat',
                                  sep=',')
 
-    model = _get_model()
-    train_samples, valid_samples = _get_samples(len(data_for_learn))
-    train_generator = SequenceGenerator(train_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA)
-    valid_generator = SequenceGenerator(valid_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA)
+    model = _get_model_CNN()
+    train_samples, valid_samples = _get_samples_CNN(len(data_for_learn))
+    train_generator = SequenceGenerator(train_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA_CNN, _IN_X)
+    valid_generator = SequenceGenerator(valid_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA_CNN, _IN_X)
     early_stopper = EarlyStopping(patience=5, verbose=0)
     nn_save_path = path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[column] + '/' + str(season) + '.h5'
     check_pointer = ModelCheckpoint(nn_save_path, verbose=0, save_best_only=True)
@@ -171,7 +203,7 @@ def _delete_temp_data(path_to_save, station_id, columns):
                 os.remove(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(i) + '.dat')
 
 
-def train_single_file(station_id, path_to_data, columns, path_to_save):
+def _train_CNN(station_id, path_to_data, columns, path_to_save):
 
     _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_save)
 
@@ -180,9 +212,50 @@ def train_single_file(station_id, path_to_data, columns, path_to_save):
         for season in range(_SEASON_NUMBER):
             for i in range(len(columns)):
                 if columns[i]:
-                    threads.append(executor.submit(_train_model_for_season,
+                    threads.append(executor.submit(_train_model_for_season_CNN,
                                                    path_to_save, station_id, season, i))
         concurrent.futures.wait(threads)
 
     _delete_temp_data(path_to_save, station_id, columns)
 
+
+def _train_model_for_season_LSTM(path_to_save, station_id, season, column):
+    data_for_learn = np.fromfile(path_to_save + '/' + station_id + '/' + str(season) + '_' + str(column) + '.dat',
+                                 sep=',')
+
+    model = _get_model_LSTM()
+    train_samples, valid_samples = _get_samples_LSTM(len(data_for_learn))
+    train_generator = SequenceGenerator(train_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA_LSTM, _IN_X_LSTM)
+    valid_generator = SequenceGenerator(valid_samples, _BATCH_SIZE, data_for_learn, _SCALE_DATA_LSTM, _IN_X_LSTM)
+    early_stopper = EarlyStopping(patience=5, verbose=0)
+    nn_save_path = path_to_save + '/' + station_id + '/' + _COLUMN_TO_STR[column] + '/' + str(season) + '.h5'
+    check_pointer = ModelCheckpoint(nn_save_path, verbose=0, save_best_only=True)
+
+    model.fit(x=train_generator,
+              steps_per_epoch=len(train_generator),
+              epochs=_EPOCHS,
+              verbose=0,
+              validation_data=valid_generator,
+              validation_steps=len(valid_generator),
+              callbacks=[check_pointer, early_stopper])
+
+
+def _train_LSTM(station_id, path_to_data, columns, path_to_save):
+
+    _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_save)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        threads = []
+        for season in range(_SEASON_NUMBER):
+            for i in range(len(columns)):
+                if columns[i]:
+                    threads.append(executor.submit(_train_model_for_season_LSTM,
+                                                   path_to_save, station_id, season, i))
+
+        concurrent.futures.wait(threads)
+
+    _delete_temp_data(path_to_save, station_id, columns)
+
+
+def train_single_file(station_id, path_to_data, columns, path_to_save):
+    _train_LSTM(station_id, path_to_data, columns, path_to_save)
