@@ -61,13 +61,16 @@ def gui_init_diagrams_data_handle(ui: Ui_main_window,
             anomaly_text = get_anomaly_text()
             if anomaly_text == "min":
                 current_anomaly_value = current_anomaly_data_dict[key]["min"][1]
-                new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
+                if current_anomaly_value != -1:
+                    new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
             elif anomaly_text == "max":
                 current_anomaly_value = current_anomaly_data_dict[key]["max"][1]
-                new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
+                if current_anomaly_value != -1:
+                    new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
             elif anomaly_text == "average":
                 current_anomaly_value = current_anomaly_data_dict[key]["average"][1]
-                new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
+                if current_anomaly_value != -1:
+                    new_list_widget_item.setBackground(QColor(colors[current_anomaly_value]))
 
         periods_list_widget.addItem(new_list_widget_item)
 
