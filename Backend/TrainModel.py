@@ -115,14 +115,11 @@ def _create_model_LSTM():
     model = Sequential()
 
     model.add(LSTM(32, activation='tanh', input_shape=(_IN_X_LSTM, _IN_Y_LSTM), return_sequences=False))
-    # model.add(LSTM(8, activation='tanh', return_sequences=False))
 
     model.add(RepeatVector(_IN_X_LSTM))
-    # model.add(LSTM(8, activation='tanh', return_sequences=True))
     model.add(LSTM(32, activation='tanh', return_sequences=True))
     model.add(TimeDistributed(Dense(_IN_Y_LSTM)))
 
-    # model.summary()
     return model
 
 
@@ -254,7 +251,7 @@ def _train_LSTM(station_id, path_to_data, columns, path_to_save):
                 if columns[i]:
                     threads.append(executor.submit(_train_model_for_season_LSTM,
                                                    path_to_save, station_id, season, i))
-                    # _train_model_for_season_LSTM(path_to_save, station_id, season, i)
+
         concurrent.futures.wait(threads)
 
     _delete_temp_data(path_to_save, station_id, columns)
