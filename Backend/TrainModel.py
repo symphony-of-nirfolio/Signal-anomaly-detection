@@ -22,11 +22,11 @@ _MAX_YEAR = 2020
 _MIN_TEMPERATURE = 265
 _MAX_TEMPERATURE = 320
 _SCALE_DATA_CNN = 8
-_SCALE_DATA_LSTM = 6
+_SCALE_DATA_LSTM = 20
 
 _BATCH_SIZE = 8
 _IN_X = 28
-_IN_X_LSTM = 6
+_IN_X_LSTM = 28
 _IN_Y = 1
 _IN_Y_LSTM = 1
 _EPOCHS = 200
@@ -114,10 +114,10 @@ def _prepare_all_data_single_file(station_id, path_to_data, columns, path_to_sav
 def _create_model_LSTM():
     model = Sequential()
 
-    model.add(LSTM(32, activation='tanh', input_shape=(_IN_X_LSTM, _IN_Y_LSTM), return_sequences=False))
+    model.add(LSTM(128, activation='tanh', input_shape=(_IN_X_LSTM, _IN_Y_LSTM), return_sequences=False))
 
     model.add(RepeatVector(_IN_X_LSTM))
-    model.add(LSTM(32, activation='tanh', return_sequences=True))
+    model.add(LSTM(128, activation='tanh', return_sequences=True))
     model.add(TimeDistributed(Dense(_IN_Y_LSTM)))
 
     return model
@@ -168,8 +168,8 @@ def _get_samples_LSTM(dataset_len):
     dataset_len = (dataset_len - _IN_X_LSTM)//_SCALE_DATA_LSTM
     all_samples = [i for i in range(dataset_len)]
     random.shuffle(all_samples)
-    train_size = (int(0.7*dataset_len)//_IN_X_LSTM//_BATCH_SIZE)*_IN_X_LSTM*_BATCH_SIZE
-    valid_size = ((dataset_len - train_size)//_IN_X_LSTM//_BATCH_SIZE)*_IN_X_LSTM*_BATCH_SIZE
+    train_size = (int(0.7*dataset_len)//_BATCH_SIZE)*_BATCH_SIZE
+    valid_size = ((dataset_len - train_size)//_BATCH_SIZE)*_BATCH_SIZE
     train_samples = all_samples[:train_size]
     valid_samples = all_samples[train_size:train_size+valid_size]
     return train_samples, valid_samples
