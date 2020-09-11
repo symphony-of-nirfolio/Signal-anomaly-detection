@@ -17,9 +17,9 @@ class Prediction:
     _path_to_nn = None
     _predict_result = None
     _lock = None
-    _RED = 0.02
+    _RED = 0.025
     _YELLOW = 0.01
-    _RANGE = 0.05
+    _RANGE = 0.3
 
     def __init__(self):
         raise RuntimeError('Call instance() instead')
@@ -269,16 +269,17 @@ class Prediction:
 
     # predict for season and column LSTM
     def _predict_model_for_season_LSTM(self, data, nn_model, column, season):
-        data_to_predict, year_concat = self._concat_local_data(data, column, season, 6)
+        WINDOW_x = 28
+        data_to_predict, year_concat = self._concat_local_data(data, column, season, WINDOW_x)
 
-        test_generator = SequenceGenerator(range(len(data_to_predict) // 6), 1, data_to_predict, 6, 6)
+        test_generator = SequenceGenerator(range(len(data_to_predict) // WINDOW_x), 1, data_to_predict, WINDOW_x, WINDOW_x)
         results = nn_model.predict(x=test_generator,
                                    steps=len(test_generator),
                                    verbose=0)
 
         results = np.reshape(results, (results.shape[0], results.shape[1]))
         results = self._get_difference(data_to_predict, results)
-        data_to_predict, year_concat, results = self._merge_same_parts(data_to_predict, year_concat, results, 3)
+        data_to_predict, year_concat, results = self._merge_same_parts(data_to_predict, year_concat, results, WINDOW_x // 2)
 
         self._save_to_dict(data, results, column, season)
 
